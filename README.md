@@ -1,1 +1,2 @@
-# ios-mobile-sdk
+# ios
+Extole iOS SDK
