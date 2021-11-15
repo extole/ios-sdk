@@ -24,10 +24,10 @@ class ZoneService {
 
         zonesName.forEach { (zoneName) in
             dispatchGroup.enter()
-            let requestBuilder = ZonesEndpoints.renderWithRequestBuilder(
+            let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
                 body: RenderZoneRequest(eventName: zoneName, jwt: nil, idToken: nil, data: requestData))
             httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-                .execute { [self] (response: ExtoleConsumerAPI.Response<ExtoleConsumerAPI.ZoneResponse>?, _: Error?) in
+                .execute { [self] (response: Response<ZoneResponse>?, _: Error?) in
                     if response != nil && response?.body != nil {
                         let campaignId = response?.header[HEADER_CAMPAIGN_ID] ?? ""
                         prefetchedResponses[ZoneResponseKey(zoneName)] = Zone(zoneName: zoneName,

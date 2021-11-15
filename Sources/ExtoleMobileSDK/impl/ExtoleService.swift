@@ -73,11 +73,11 @@ public class ExtoleService: Extole {
     private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
         var modifiedData = data
         modifiedData["labels"] = labels.joined(separator: ",")
-        let requestBuilder = ZonesEndpoints.renderWithRequestBuilder(
+        let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
             body: RenderZoneRequest(eventName: zoneName, data: modifiedData))
 
         httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-            .execute { (response: ExtoleConsumerAPI.Response<ExtoleConsumerAPI.ZoneResponse>?, error: Error?) in
+            .execute { (response: Response<ZoneResponse>?, error: Error?) in
                 completion(response, error)
             }
     }
@@ -87,8 +87,8 @@ public class ExtoleService: Extole {
         let dispatchGroup = DispatchGroup()
         if accessToken.isEmpty {
             dispatchGroup.enter()
-            TokenEndpoints.createTokenWithRequestBuilder()
-                .execute { [self] (token: ExtoleConsumerAPI.Response<ExtoleConsumerAPI.TokenResponse>?, _: Error?) in
+            AuthorizationEndpoints.createTokenWithRequestBuilder()
+                .execute { [self] (token: Response<TokenResponse>?, _: Error?) in
                     accessToken = token?.body?.accessToken ?? ""
                     setAccessToken(accessToken: accessToken)
                     dispatchGroup.leave()
@@ -113,7 +113,7 @@ public class ExtoleService: Extole {
         self.data.forEach { key, value in
             customData[key] = value
         }
-        let request = EventsEndpoints.postWithRequestBuilder(body:
+        let request = EventEndpoints.postWithRequestBuilder(body:
         SubmitEventRequest(eventName: eventName, data: customData.mapValues { value in
             value as! String
         }))
@@ -143,7 +143,7 @@ public class ExtoleService: Extole {
     public func getMe(_ completion: @escaping (Me, Error?) -> Void) {
         let requestBuilder = MeEndpoints.getMyProfileWithRequestBuilder()
         httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-            .execute { (response: Response<ExtoleConsumerAPI.MyProfileResponse>?, error: Error?) in
+            .execute { (response: Response<MyProfileResponse>?, error: Error?) in
                 let profile = response?.body
                 completion(Me(email: profile?.email, firstName: profile?.firstName, lastName: profile?.lastName,
                     partnerUserId: profile?.partnerUserId, profilePictureUrl: profile?.profilePictureUrl), error)
@@ -155,8 +155,8 @@ public class ExtoleService: Extole {
             data: data, labels: labels, sandbox: sandbox, debugEnabled: debugEnabled)
     }
 
-    public func webViewBuilder(_ webView: UIWebView) -> ExtoleWebViewBuilder {
-        return ExtoleWebViewBuilderImpl()
+    public func webViewBuilder() -> ExtoleWebViewBuilder {
+        ExtoleWebViewBuilderImpl(programDomain)
     }
 
 }

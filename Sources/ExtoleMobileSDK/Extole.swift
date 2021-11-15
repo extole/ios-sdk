@@ -15,7 +15,7 @@ public protocol Extole {
 
     func clone() -> ExtoleBuilder
 
-    func webViewBuilder(_ webView: UIWebView) -> ExtoleWebViewBuilder
+    func webViewBuilder() -> ExtoleWebViewBuilder
 
     var EXTOLE_SDK_TAG: String { get }
     var ACCESS_TOKEN_PREFERENCES_KEY: String { get }

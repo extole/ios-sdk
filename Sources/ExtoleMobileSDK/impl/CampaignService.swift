@@ -37,7 +37,8 @@ class CampaignService: Campaign {
         }
         doZoneRequest(zoneName: zoneName) { response, error in
             let campaignId = response?.header["x-extole-campaign"] ?? ""
-            completion(Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data), error)
+            completion(Zone(zoneName: zoneName, campaignId: Id(campaignId),
+                content: response?.body?.data as? [String: Entry?]), error)
         }
     }
 
@@ -62,18 +63,18 @@ class CampaignService: Campaign {
         data.forEach { key, value in
             customData[key] = value
         }
-        let request = EventsEndpoints.postWithRequestBuilder(body:
+        let request = EventEndpoints.postWithRequestBuilder(body:
         SubmitEventRequest(eventName: eventName, data: customData.mapValues { value in
             value as! String
         }))
         httpCallFor(request, programDomain, customHeaders)
-            .execute { (response: ExtoleConsumerAPI.Response<ExtoleConsumerAPI.SubmitEventResponse>?, error: Error?) in
+            .execute { (response: Response<SubmitEventResponse>?, error: Error?) in
                 completion(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
             }
     }
 
     func webViewBuilder(_ webView: UIWebView) -> ExtoleWebViewBuilder {
-        return ExtoleWebViewBuilderImpl()
+        ExtoleWebViewBuilderImpl(programDomain)
     }
 
     private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
@@ -83,11 +84,11 @@ class CampaignService: Campaign {
         }
         modifiedData["labels"] = labels.joined(separator: ",")
         modifiedData["campaign_id"] = campaignId.value
-        let requestBuilder = ZonesEndpoints.renderWithRequestBuilder(body:
+        let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(body:
         RenderZoneRequest(eventName: zoneName, data: modifiedData))
 
         httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-            .execute { (response: ExtoleConsumerAPI.Response<ExtoleConsumerAPI.ZoneResponse>?, error: Error?) in
+            .execute { (response: Response<ZoneResponse>?, error: Error?) in
                 completion(response, error)
             }
     }
