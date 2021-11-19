@@ -1,6 +1,6 @@
 import Foundation
 import ExtoleConsumerAPI
-import UIKit
+import WebKit
 
 public class ExtoleService: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
@@ -8,17 +8,17 @@ public class ExtoleService: Extole {
     public var EXTOLE_SDK_TAG: String = "EXTOLE"
     private let PREFETCH_ZONE: String = "prefetch"
 
-    private var programDomain: String
-    private var appName: String
-    private var appData: [String: String]
-    private var data: [String: String]
-    private var labels: [String]
+    var programDomain: String
+    var appName: String
+    var appData: [String: String]
+    var data: [String: String]
+    var labels: [String]
     private var sandbox: String
     private var debugEnabled: Bool
 
     private let zoneService: ZoneService
-    private var customHeaders: [String: String] = [:]
-    private var persistance: UserDefaults = UserDefaults.standard
+    var customHeaders: [String: String] = [:]
+    private let persistance: UserDefaults = UserDefaults.standard
     private var zonesResponse: [ZoneResponseKey: Zone?] = [:]
     private var me: Me = Me()
 
@@ -33,8 +33,7 @@ public class ExtoleService: Extole {
         self.sandbox = sandbox
         self.debugEnabled = debugEnabled
         self.zoneService = ZoneService(programDomain: programDomain)
-        initExtole()
-        prefetch()
+        initAccessToken()
     }
 
     private func prefetch() {
@@ -64,8 +63,7 @@ public class ExtoleService: Extole {
         doZoneRequest(zoneName: zoneName) { response, error in
             let campaignId = response?.header["x-extole-campaign"] ?? ""
             let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data)
-            let campaign = CampaignService(self.labels.joined(separator: ","), Id(campaignId), self.programDomain, zone,
-                self.customHeaders, self.labels, self.data)
+            let campaign = CampaignService(Id(campaignId), zone, self)
             completion(zone, campaign, error)
         }
     }
@@ -82,24 +80,24 @@ public class ExtoleService: Extole {
             }
     }
 
-    private func initExtole() {
+    private func initAccessToken() {
+        let dispatcher = DispatchGroup()
         var accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
-        let dispatchGroup = DispatchGroup()
         if accessToken.isEmpty {
-            dispatchGroup.enter()
-            AuthorizationEndpoints.createTokenWithRequestBuilder()
-                .execute { [self] (token: Response<TokenResponse>?, _: Error?) in
-                    accessToken = token?.body?.accessToken ?? ""
+            dispatcher.enter()
+            let request = AuthorizationEndpoints.createTokenWithRequestBuilder()
+            httpCallFor(request, programDomain + "/api", customHeaders)
+                .execute { [self] (tokenResponse: Response<TokenResponse>?, _: Error?) in
+                    accessToken = tokenResponse?.body?.accessToken ?? ""
                     setAccessToken(accessToken: accessToken)
-                    dispatchGroup.leave()
+                    dispatcher.leave()
+                    prefetch()
                 }
         } else {
             setAccessToken(accessToken: accessToken)
+            prefetch()
         }
-        dispatchGroup.notify(queue: .main) { [self] in
-            setAccessToken(accessToken: accessToken)
-        }
-        dispatchGroup.wait()
+        dispatcher.wait()
     }
 
     private func setAccessToken(accessToken: String) {
@@ -130,7 +128,7 @@ public class ExtoleService: Extole {
         persistance.setNilValueForKey(ACCESS_TOKEN_PREFERENCES_KEY)
     }
 
-    public func identify(_ identifier: String, _ data: [String: Any?],
+    public func identify(_ identifier: String, _ data: [String: Any?] = [:],
                          _ completion: @escaping (Id<Event>?, Error?) -> Void) {
         var customData = data
         self.data.forEach { key, value in
@@ -156,7 +154,10 @@ public class ExtoleService: Extole {
     }
 
     public func webViewBuilder() -> ExtoleWebViewBuilder {
-        ExtoleWebViewBuilderImpl(programDomain)
+        let webViewBuilder = ExtoleWebViewBuilderImpl(programDomain)
+            .withHttpHeaders(headers: customHeaders)
+            .withData(data: data)
+        return webViewBuilder
     }
 
 }

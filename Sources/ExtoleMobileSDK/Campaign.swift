@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 public protocol Campaign {
 
@@ -9,5 +8,5 @@ public protocol Campaign {
     func emailShare(_ recipient: String, _ subject: String,
                     _ message: String, _ data: [String: Any?], _ completion: @escaping (Id<Event>?, Error?) -> Void)
     func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: @escaping (Id<Event>?, Error?) -> Void)
-    func webViewBuilder(_ webView: UIWebView) -> ExtoleWebViewBuilder
+    func webViewBuilder() -> ExtoleWebViewBuilder
 }

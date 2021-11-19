@@ -10,17 +10,17 @@ public class ExtoleWebViewBuilderImpl: ExtoleWebViewBuilder {
         self.programDomain = programDomain
     }
 
-    public func addHttpHeader(header: String, value: String) -> ExtoleWebViewBuilder {
-        headers[header] = value
+    public func withHttpHeaders(headers: [String: String]) -> ExtoleWebViewBuilder {
+        self.headers = headers
         return self
     }
 
-    public func addData(key: String, value: String) -> ExtoleWebViewBuilder {
-        data[key] = value
+    public func withData(data: [String: String]) -> ExtoleWebViewBuilder {
+        self.data = data
         return self
     }
 
     public func create() -> ExtoleWebView {
-        ExtoleWebViewService(programDomain, data, headers)
+        return ExtoleWebViewService(programDomain, data, headers)
     }
 }

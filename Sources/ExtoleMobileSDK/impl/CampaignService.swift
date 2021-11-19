@@ -1,29 +1,20 @@
 import Foundation
-import UIKit
+import WebKit
 import ExtoleConsumerAPI
 
 class CampaignService: Campaign {
-    let programLabel: String
     let campaignId: Id<Campaign>
-    let programDomain: String
-    let customHeaders: [String: String]
-    let labels: [String]
-    let customData: [String: Any?]
+    let extole: ExtoleService
     let zone: Zone
 
-    init(_ programLabel: String, _ campaignId: Id<Campaign>, _ programDomain: String, _ zone: Zone,
-         _ customHeaders: [String: String], _ labels: [String], _ customData: [String: Any?] = [:]) {
-        self.programLabel = programLabel
+    init(_ campaignId: Id<Campaign>, _ zone: Zone, _ extole: ExtoleService) {
         self.campaignId = campaignId
-        self.programDomain = programDomain
-        self.customHeaders = customHeaders
-        self.labels = labels
-        self.customData = customData
         self.zone = zone
+        self.extole = extole
     }
 
     func getProgram() -> String {
-        programLabel
+        extole.labels.joined(separator: ",")
     }
 
     func getId() -> Id<Campaign> {
@@ -52,7 +43,7 @@ class CampaignService: Campaign {
         customData["share.subject"] = subject
         customData["share.message"] = message
         customData["share.channel"] = "EXTOLE_EMAIL"
-        customData["labels"] = labels.joined(separator: ",")
+        customData["labels"] = extole.labels.joined(separator: ",")
         customData["campaign_id"] = campaignId.value
 
         sendEvent("share", customData, completion)
@@ -67,27 +58,32 @@ class CampaignService: Campaign {
         SubmitEventRequest(eventName: eventName, data: customData.mapValues { value in
             value as! String
         }))
-        httpCallFor(request, programDomain, customHeaders)
+        httpCallFor(request, extole.programDomain, extole.customHeaders)
             .execute { (response: Response<SubmitEventResponse>?, error: Error?) in
                 completion(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
             }
     }
 
-    func webViewBuilder(_ webView: UIWebView) -> ExtoleWebViewBuilder {
-        ExtoleWebViewBuilderImpl(programDomain)
+    func webViewBuilder() -> ExtoleWebViewBuilder {
+        NSLog("CampaignService headers \(extole.customHeaders)")
+        let webViewBuilder = ExtoleWebViewBuilderImpl(extole.programDomain)
+            .withHttpHeaders(headers: extole.customHeaders)
+            .withData(data: extole.data)
+
+        return webViewBuilder
     }
 
     private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
         var modifiedData: [String: String] = [:]
-        customData.forEach { key, value in
+        extole.data.forEach { key, value in
             modifiedData[key] = value as? String ?? ""
         }
-        modifiedData["labels"] = labels.joined(separator: ",")
+        modifiedData["labels"] = extole.labels.joined(separator: ",")
         modifiedData["campaign_id"] = campaignId.value
         let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(body:
         RenderZoneRequest(eventName: zoneName, data: modifiedData))
 
-        httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
+        httpCallFor(requestBuilder, extole.programDomain + "/api", extole.customHeaders)
             .execute { (response: Response<ZoneResponse>?, error: Error?) in
                 completion(response, error)
             }

@@ -49,7 +49,7 @@ class ExtoleBuilderImpl: ExtoleBuilder {
         return self
     }
 
-    // TODO implement support in stub library ENG-15946
+    // implement support in stub library ENG-15946
     func withDebugEnabled(_ debugEnabled: Bool) -> ExtoleBuilder {
         self.debugEnabled = debugEnabled
         return self
