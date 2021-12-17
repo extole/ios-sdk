@@ -64,13 +64,17 @@ class CampaignService: Campaign {
             }
     }
 
-    func webViewBuilder() -> ExtoleWebViewBuilder {
+    func webView(headers: [String: String], data: [String: String]) -> ExtoleWebView {
         NSLog("CampaignService headers \(extole.customHeaders)")
-        let webViewBuilder = ExtoleWebViewBuilderImpl(extole.programDomain)
-            .withHttpHeaders(headers: extole.customHeaders)
-            .withData(data: extole.data)
-
-        return webViewBuilder
+        var headersParams = headers
+        extole.customHeaders.forEach { key, value in
+            headersParams[key] = value
+        }
+        var dataParams = data
+        extole.data.forEach { key, value in
+            dataParams[key] = value
+        }
+        return ExtoleWebViewService(extole.programDomain, dataParams, headersParams)
     }
 
     private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
