@@ -82,7 +82,7 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        let accessToken = headers["Authorization"]?.replacingOccurrences(of: "Bearer ", with: "") ?? ""
+        let accessToken = headers["Authorization"]?.replacingOccurrences(of: "Bearer ", with: "")
         if accessToken != nil {
             NSLog("WebView setting accessTokenTo: \(accessToken)")
             webView.evaluateJavaScript("extole.tokenStore.set('\(accessToken)')")

@@ -1,6 +1,7 @@
 import Foundation
 import ExtoleConsumerAPI
 import WebKit
+import Logging
 
 public class ExtoleService: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
@@ -24,10 +25,11 @@ public class ExtoleService: Extole {
     private let zoneService: ZoneService
     private let persistance: UserDefaults = UserDefaults.standard
     private var zonesResponse: [ZoneResponseKey: Zone?] = [:]
+    private var logger: ExtoleLogger?
 
     public init(programDomain: String, applicationName: String, personIdentifier: String? = nil,
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
-                sandbox: String = "prod-prod", debugEnabled: Bool = false) {
+                sandbox: String = "prod-prod", debugEnabled: Bool = false, logHandlers: [LogHandler] = []) {
         self.programDomain = programDomain
         self.appName = applicationName
         self.appData = applicationData
@@ -35,9 +37,20 @@ public class ExtoleService: Extole {
         self.labels = labels
         self.sandbox = sandbox
         self.debugEnabled = debugEnabled
-        self.zoneService = ZoneService(programDomain: programDomain)
+        self.zoneService = ZoneService(programDomain: programDomain, logger: logger)
         self.personIdentifier = personIdentifier
-        initAccessToken { [unowned self] in
+
+        initAccessToken { [unowned self] (accessToken: String) in
+            var loggerContext: [String: String] = [:]
+            loggerContext["tags"] = ["mobile-sdk"].joined(separator: ",")
+            loggerContext["appName"] = appName
+            loggerContext["programDomain"] = programDomain
+            loggerContext["appData"] = applicationData.map { key, value -> String in
+                    key + "=" + value
+                }
+                .joined(separator: ",")
+            logger = ExtoleLoggerImpl(programDomain, accessToken, loggerContext, logHandlers)
+            logger?.debug("Identifying with \(personIdentifier)")
             identify(personIdentifier) { (_, _) in
                 prefetch()
             }
@@ -50,8 +63,9 @@ public class ExtoleService: Extole {
         zoneService.getZones(zonesName: [PREFETCH_ZONE], data: data,
             programLabels: labels, customHeaders: customHeaders) { [self] response in
             let zones = [String](response.values.map { value -> [String] in
-                value?.content?["zones"]??.jsonValue as? [String] ?? [String]()
-            }.joined())
+                    value?.content?["zones"]??.jsonValue as? [String] ?? [String]()
+                }
+                .joined())
             if !zones.isEmpty {
                 dispatchGroup.enter()
                 zoneService.getZones(zonesName: zones, data: data, programLabels: labels,
@@ -64,11 +78,21 @@ public class ExtoleService: Extole {
                 zonesResponse = responses
             }
         }
+        logger?.debug("""
+                      Initializing SDK for \(programDomain) with data: \(data) labels: \(labels),
+                      sandbox: \(sandbox), debugEnabled: \(debugEnabled)
+                      """)
         dispatchGroup.wait()
     }
 
     public func getZone(_ zoneName: String, completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
         doZoneRequest(zoneName: zoneName) { [unowned self] response, error in
+            if error != nil {
+                logger?.error("""
+                              Failed to render zone=\(zoneName),
+                              data=\(data), errorCode=\(error?.localizedDescription)
+                              """)
+            }
             let campaignId = response?.header[CAMPAIGN_ID_HEADER_NAME] ?? ""
             let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data)
             let campaign = CampaignService(Id(campaignId), zone, self)
@@ -88,6 +112,12 @@ public class ExtoleService: Extole {
             }))
         httpCallFor(request, self.programDomain, self.customHeaders)
             .execute { [self] (response, error) in
+                if error != nil {
+                    logger?.error("""
+                                  Failed to send event=\(eventName),
+                                  data=\(data), error=\(error?.localizedDescription)
+                                  """)
+                }
                 if response?.header[ACCESS_TOKEN_HEADER_NAME] != nil {
                     setAccessToken(accessToken: response?.header[ACCESS_TOKEN_HEADER_NAME] ?? "")
                 }
@@ -97,11 +127,12 @@ public class ExtoleService: Extole {
 
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
-                     labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil) -> Extole {
+                     labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil,
+                     logHandlers: [LogHandler] = []) -> Extole {
         return ExtoleService(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
             personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
             labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox,
-            debugEnabled: debugEnabled ?? self.debugEnabled)
+            debugEnabled: debugEnabled ?? self.debugEnabled, logHandlers: logHandlers)
     }
 
     public func webView(headers: [String: String] = [:], data: [String: String] = [:]) -> ExtoleWebView {
@@ -116,6 +147,10 @@ public class ExtoleService: Extole {
         return ExtoleWebViewService(programDomain, dataParams, headersParams)
     }
 
+    public func getLogger() -> ExtoleLogger? {
+        logger
+    }
+
     private func identify(_ identifier: String?, _ data: [String: Any?] = [:],
                           _ completion: @escaping (Id<Event>?, Error?) -> Void) {
         var customData = data
@@ -128,7 +163,7 @@ public class ExtoleService: Extole {
         sendEvent("identify", customData, completion: completion)
     }
 
-    private func initAccessToken(completion: @escaping () -> Void) {
+    private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
         let dispatchGroup = DispatchGroup()
         let accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
         dispatchGroup.enter()
@@ -148,24 +183,25 @@ public class ExtoleService: Extole {
                         }
                     } else {
                         setAccessToken(accessToken: accessToken, dispatchGroup)
-                        completion()
+                        completion(accessToken)
                     }
                 }
         }
         _ = dispatchGroup.wait(timeout: .now() + 3.0)
     }
 
-    private func createAccessToken(completion: @escaping () -> Void, _ dispatchGroup: DispatchGroup) {
+    private func createAccessToken(completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {
         let request = AuthorizationEndpoints.createTokenWithRequestBuilder()
         httpCallFor(request, self.programDomain + "/api", self.customHeaders)
             .execute { [self] (tokenResponse: Response<TokenResponse>?, _: Error?) in
                 let accessToken = tokenResponse?.body?.accessToken ?? ""
                 setAccessToken(accessToken: accessToken, dispatchGroup)
-                completion()
+                completion(accessToken)
             }
     }
 
     private func setAccessToken(accessToken: String, _ dispatchGroup: DispatchGroup? = nil) {
+        logger?.debug("Setting accessToken")
         customHeaders["Authorization"] = "Bearer " + accessToken
         persistance.setValue(accessToken, forKey: ACCESS_TOKEN_PREFERENCES_KEY)
         dispatchGroup?.leave()

@@ -4,9 +4,11 @@ import ExtoleConsumerAPI
 class ZoneService {
     private let HEADER_CAMPAIGN_ID = "x-extole-campaign"
     private let programDomain: String
+    private let logger: ExtoleLogger?
 
-    init(programDomain: String) {
+    init(programDomain: String, logger: ExtoleLogger?) {
         self.programDomain = programDomain
+        self.logger = logger
     }
 
     public func getZones(zonesName: [String], data: [String: Any?],
@@ -27,7 +29,13 @@ class ZoneService {
             let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
                 body: RenderZoneRequest(eventName: zoneName, jwt: nil, idToken: nil, data: requestData))
             httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-                .execute { [self] (response: Response<ZoneResponse>?, _: Error?) in
+                .execute { [self] (response: Response<ZoneResponse>?, error: Error?) in
+                    if error != nil {
+                        logger?.error("""
+                                      Zone fetch error \(error.debugDescription),
+                                      labels=\(labels), zoneName=\(zoneName)
+                                      """)
+                    }
                     if response != nil && response?.body != nil {
                         let campaignId = response?.header[HEADER_CAMPAIGN_ID] ?? ""
                         prefetchedResponses[ZoneResponseKey(zoneName)] = Zone(zoneName: zoneName,
