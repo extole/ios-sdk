@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
   s.name = 'ExtoleMobileSDK'
   s.ios.deployment_target = '12.0'
   s.platform = :ios, "12.0"
-  s.version = '0.0.11'
+  s.version = '0.0.12'
   s.source = { :git => 'https://github.com/extole/ios-sdk.git', :tag => "#{s.version}" }
   s.authors = 'Extole'
   s.license = { :type => "MIT", :file => "LICENSE" }
