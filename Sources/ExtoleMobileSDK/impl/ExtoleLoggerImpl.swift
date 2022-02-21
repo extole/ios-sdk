@@ -46,6 +46,8 @@ class ExtoleLoggerImpl: ExtoleLogger {
 
     private func mapToLibraryLogLevel(level: LogLevel) -> Logger.Level {
         switch level {
+        case .disable:
+            return Logger.Level.critical
         case .info:
             return Logger.Level.info
         case .debug:

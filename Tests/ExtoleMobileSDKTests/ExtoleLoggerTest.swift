@@ -14,7 +14,6 @@ final class ExtoleLoggerTest: XCTestCase {
             }
             inMemoryLogs[level]?.append(message)
         })
-
         logger = ExtoleLoggerImpl("program-domain", "access-token", [:], [logHandler])
     }
 
@@ -55,6 +54,20 @@ final class ExtoleLoggerTest: XCTestCase {
 
         XCTAssert(inMemoryLogs[Logger.Level.error]?.count == 1)
         XCTAssertEqual(inMemoryLogs[Logger.Level.error]![0], "extole : Error\n")
+    }
+
+    func testNoErrorsAreLoggedWhenLogLevelIsDisable() throws {
+        logger?.setLogLevel(level: .disable)
+
+        logger?.debug("Debug")
+        logger?.info("Info")
+        logger?.warn("Warn")
+        logger?.error("Error")
+
+        XCTAssert(inMemoryLogs[Logger.Level.debug] == nil)
+        XCTAssert(inMemoryLogs[Logger.Level.info] == nil)
+        XCTAssert(inMemoryLogs[Logger.Level.warning] == nil)
+        XCTAssert(inMemoryLogs[Logger.Level.error] == nil)
     }
 
     func testOnlyErrorsAreLoggedByDefault() throws {

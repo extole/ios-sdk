@@ -14,7 +14,6 @@ let package = Package(
             targets: ["ExtoleMobileSDK"])
     ],
     dependencies: [
-        .package(name: "ExtoleClientAPI", url: "https://github.com/extole/ios-client-api.git", .upToNextMajor(from: "0.0.1")),
         .package(name: "ExtoleConsumerAPI", url: "https://github.com/extole/ios-consumer-api.git", .upToNextMajor(from: "0.0.1")),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
     ],
@@ -22,7 +21,6 @@ let package = Package(
         .target(
             name: "ExtoleMobileSDK",
             dependencies: [
-                "ExtoleClientAPI",
                 "ExtoleConsumerAPI",
                 .product(name: "Logging", package: "swift-log")
             ]),

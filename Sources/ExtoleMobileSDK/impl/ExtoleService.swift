@@ -8,6 +8,7 @@ public class ExtoleService: Extole {
     public var ACCESS_TOKEN_PREFERENCES_KEY: String = "access_token"
     public var EXTOLE_SDK_TAG: String = "EXTOLE"
     private let PREFETCH_ZONE: String = "prefetch"
+    private let LOG_LEVEL: String = "log_level"
     private let ACCESS_TOKEN_HEADER_NAME = "x-extole-token"
     private let CAMPAIGN_ID_HEADER_NAME = "x-extole-campaign"
 
@@ -62,6 +63,8 @@ public class ExtoleService: Extole {
         var responses: [ZoneResponseKey: Zone?] = [:]
         zoneService.getZones(zonesName: [PREFETCH_ZONE], data: data,
             programLabels: labels, customHeaders: customHeaders) { [self] response in
+            let logLevel = response[ZoneResponseKey(PREFETCH_ZONE)]??.get(LOG_LEVEL) as! String?
+            logger?.setLogLevel(level: toExtoleLogLevel(logLevel ?? ""))
             let zones = [String](response.values.map { value -> [String] in
                     value?.content?["zones"]??.jsonValue as? [String] ?? [String]()
                 }
@@ -90,7 +93,7 @@ public class ExtoleService: Extole {
             if error != nil {
                 logger?.error("""
                               Failed to render zone=\(zoneName),
-                              data=\(data), errorCode=\(error?.localizedDescription)
+                              data=\(data), errorCode=\(String(describing: error?.localizedDescription))
                               """)
             }
             let campaignId = response?.header[CAMPAIGN_ID_HEADER_NAME] ?? ""
@@ -115,7 +118,7 @@ public class ExtoleService: Extole {
                 if error != nil {
                     logger?.error("""
                                   Failed to send event=\(eventName),
-                                  data=\(data), error=\(error?.localizedDescription)
+                                  data=\(data), error=\(String(describing: error?.localizedDescription))
                                   """)
                 }
                 if response?.header[ACCESS_TOKEN_HEADER_NAME] != nil {
@@ -125,11 +128,35 @@ public class ExtoleService: Extole {
             }
     }
 
+    public func pollReward(pollingId: String, timeoutSeconds: Int = 5, retries: Int = 5, completion: @escaping (PollingRewardResponse?, Error?) -> Void) {
+        let request = MeRewardEndpoints.getRewardStatusWithRequestBuilder(pollingId: pollingId)
+
+        var rewardResponseWasReceived = false
+        let dispatchGroup = DispatchGroup()
+        for _ in 0...retries {
+            dispatchGroup.enter()
+            httpCallFor(request, self.programDomain + "/api", self.customHeaders)
+                .execute { (pollingRewardResponse: Response<PollingRewardResponse>?, error: Error?) in
+                    dispatchGroup.leave()
+                    if pollingRewardResponse?.body?.status != PollingRewardResponse.Status.pending || error != nil {
+                        rewardResponseWasReceived = true
+                        return completion(pollingRewardResponse?.body, error)
+                    }
+                }
+            sleep(UInt32(timeoutSeconds * 1_000_000))
+            dispatchGroup.wait(timeout: .now() + 5)
+        }
+        if !rewardResponseWasReceived {
+            logger?.debug("reward response was not received")
+            completion(nil, nil)
+        }
+    }
+
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
                      labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil,
                      logHandlers: [LogHandler] = []) -> Extole {
-        return ExtoleService(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
+        ExtoleService(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
             personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
             labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox,
             debugEnabled: debugEnabled ?? self.debugEnabled, logHandlers: logHandlers)
@@ -159,8 +186,8 @@ public class ExtoleService: Extole {
         }
         if identifier != nil {
             customData["email"] = identifier
+            sendEvent("identify", customData, completion: completion)
         }
-        sendEvent("identify", customData, completion: completion)
     }
 
     private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
@@ -188,6 +215,17 @@ public class ExtoleService: Extole {
                 }
         }
         _ = dispatchGroup.wait(timeout: .now() + 3.0)
+    }
+
+    private func toExtoleLogLevel(_ logLevel: String) -> LogLevel {
+        switch logLevel {
+        case "ERROR": return LogLevel.error
+        case "WARN": return LogLevel.warn
+        case "INFO": return LogLevel.info
+        case "DEBUG": return LogLevel.debug
+        case "DISABLE": return LogLevel.disable
+        default: return LogLevel.error
+        }
     }
 
     private func createAccessToken(completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {

@@ -24,16 +24,16 @@ struct ExtoleLogHandler: LogHandler {
 
     public var metadata = Logger.Metadata() {
         didSet {
-            self.prettyMetadata = self.prettify(self.metadata)
+            self.prettyMetadata = prettify(metadata)
         }
     }
 
     public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {
         get {
-            return self.metadata[metadataKey]
+            metadata[metadataKey]
         }
         set {
-            self.metadata[metadataKey] = newValue
+            metadata[metadataKey] = newValue
         }
     }
 
@@ -45,15 +45,16 @@ struct ExtoleLogHandler: LogHandler {
                     function: String,
                     line: UInt) {
         let prettyMetadata = metadata?.isEmpty ?? true
-            ? self.prettyMetadata
-            : self.prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))
-
-        let logMessage = "\(self.label) :\(prettyMetadata.map { " \($0)" } ?? "") \(message)\n"
-        loggingMethod(logMessage, level)
+            ? prettyMetadata
+            : prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))
+        if logLevel != .critical { // Loggger.Level.critical is considered .disable in ExtoleSdk
+            let logMessage = "\(self.label) :\(prettyMetadata.map { " \($0)" } ?? "") \(message)\n"
+            loggingMethod(logMessage, level)
+        }
     }
 
     private func prettify(_ metadata: Logger.Metadata) -> String? {
-        return !metadata.isEmpty
+        !metadata.isEmpty
             ? metadata.lazy.sorted(by: { $0.key < $1.key }).map {
                 "\($0)=\($1)"
             }

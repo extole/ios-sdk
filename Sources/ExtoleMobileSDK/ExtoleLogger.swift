@@ -16,6 +16,7 @@ public protocol ExtoleLogger {
 }
 
 public enum LogLevel {
+    case disable
     case debug
     case info
     case warn

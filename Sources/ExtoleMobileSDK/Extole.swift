@@ -1,6 +1,7 @@
 import Foundation
 import WebKit
 import Logging
+import ExtoleConsumerAPI
 
 public protocol Extole {
 
@@ -11,6 +12,8 @@ public protocol Extole {
     func webView(headers: [String: String], data: [String: String]) -> ExtoleWebView
 
     func getLogger() -> ExtoleLogger?
+
+    func pollReward(pollingId: String, timeoutSeconds: Int, retries: Int, completion: @escaping (PollingRewardResponse?, Error?) -> Void)
 
     func copy(programDomain: String?, applicationName: String?, email: String?, applicationData: [String: String]?,
               data: [String: String]?, labels: [String]?, sandbox: String?, debugEnabled: Bool?, logHandlers: [LogHandler]) -> Extole
@@ -30,5 +33,9 @@ extension Extole {
 
     public func webView(headers: [String: String] = [:], data: [String: String] = [:]) -> ExtoleWebView {
         return webView(headers: headers, data: data)
+    }
+
+    public func pollReward(pollingId: String, timeoutSeconds: Int = 5, retries: Int = 5, completion: @escaping (PollingRewardResponse?, Error?) -> Void) {
+        return pollReward(pollingId: pollingId, timeoutSeconds: timeoutSeconds, retries: retries, completion: completion)
     }
 }
