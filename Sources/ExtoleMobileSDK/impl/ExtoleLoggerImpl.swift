@@ -24,6 +24,10 @@ class ExtoleLoggerImpl: ExtoleLogger {
         logger.logLevel = logLevel
     }
 
+    func getLogLevel() -> LogLevel {
+        mapFromLibraryLogLevel(level: logger.logLevel)
+    }
+
     func debug(_ message: String, args: Any?...) {
         logger.debug("\(message)")
     }
@@ -56,6 +60,23 @@ class ExtoleLoggerImpl: ExtoleLogger {
             return Logger.Level.warning
         case .error:
             return Logger.Level.error
+        }
+    }
+
+    private func mapFromLibraryLogLevel(level: Logger.Level) -> LogLevel {
+        switch level {
+        case .critical:
+            return LogLevel.disable
+        case .info:
+            return LogLevel.info
+        case .debug:
+            return LogLevel.debug
+        case .warning:
+            return LogLevel.warn
+        case .error:
+            return LogLevel.error
+        default:
+            return LogLevel.error
         }
     }
 
