@@ -1,5 +1,5 @@
 import Foundation
 
-public class Zones {
-    public var zonesResponse: [String: Any?] = [:]
+class Zones {
+    var zonesResponse: [String: Any?] = [:]
 }

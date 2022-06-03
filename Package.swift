@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "ExtoleMobileSDK",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v12)
     ],
     products: [
         .library(
@@ -15,18 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "ExtoleConsumerAPI", url: "https://github.com/extole/ios-consumer-api.git", .upToNextMajor(from: "0.0.1")),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/tristanhimmelman/ObjectMapper.git", .upToNextMajor(from: "4.1.0")),
-        .package(url: "https://github.com/cesarferreira/SwiftEventBus.git", from: "5.1.0")
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
     ],
     targets: [
         .target(
             name: "ExtoleMobileSDK",
             dependencies: [
                 "ExtoleConsumerAPI",
-                .product(name: "Logging", package: "swift-log"),
-                .product(name: "ObjectMapper", package: "ObjectMapper"),
-                .product(name: "SwiftEventBus", package: "SwiftEventBus")
+                .product(name: "Logging", package: "swift-log")
             ]),
         .testTarget(
             name: "ExtoleMobileSDKTests",

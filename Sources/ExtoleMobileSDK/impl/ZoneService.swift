@@ -27,22 +27,22 @@ class ZoneService {
         zonesName.forEach { (zoneName) in
             dispatchGroup.enter()
             let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
-              body: RenderZoneRequest(eventName: zoneName, jwt: nil, idToken: nil, data: requestData))
+                body: RenderZoneRequest(eventName: zoneName, jwt: nil, idToken: nil, data: requestData))
             httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
-              .execute { [self] (response: Response<ZoneResponse>?, error: Error?) in
-                  if error != nil {
-                      logger?.error("""
-                                    Zone fetch error \(error.debugDescription),
-                                    labels=\(labels), zoneName=\(zoneName)
-                                    """)
-                  }
-                  if response != nil && response?.body != nil {
-                      let campaignId = response?.header[HEADER_CAMPAIGN_ID] ?? ""
-                      prefetchedResponses[ZoneResponseKey(zoneName)] = Zone(zoneName: zoneName,
-                        campaignId: Id(campaignId), content: response?.body?.data)
-                  }
-                  dispatchGroup.leave()
-              }
+                .execute { [self] (response: Response<ZoneResponse>?, error: Error?) in
+                    if error != nil {
+                        logger?.error("""
+                                      Zone fetch error \(error.debugDescription),
+                                      labels=\(labels), zoneName=\(zoneName)
+                                      """)
+                    }
+                    if response != nil && response?.body != nil {
+                        let campaignId = response?.header[HEADER_CAMPAIGN_ID] ?? ""
+                        prefetchedResponses[ZoneResponseKey(zoneName)] = Zone(zoneName: zoneName,
+                            campaignId: Id(campaignId), content: response?.body?.data)
+                    }
+                    dispatchGroup.leave()
+                }
         }
         dispatchGroup.notify(queue: .main) {
             completion(prefetchedResponses)
