@@ -100,16 +100,57 @@ class AppEngineTests: XCTestCase {
         XCTAssertEqual(actionsToExecute?.count, 0)
     }
 
+    func testCustomActionAndConditionsAreDeserializedAndExecuted() throws {
+        let operationsJson = """
+                                 [
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "CUSTOM_CONDITION",
+                                         "custom_parameter": [
+                                           "custom_value"
+                                         ]
+                                       }
+                                     ],
+                                     "actions": [
+                                       {
+                                         "type": "CUSTOM_ACTION",
+                                         "custom_parameter": "custom_value"
+                                       }
+                                     ]
+                                   }
+                                 ]
+                             """
+        Action.customActionTypes["CUSTOM_ACTION"] = CustomAction()
+        Condition.customConditionTypes["CUSTOM_CONDITION"] = CustomCondition()
+
+        let operations = Mapper<ExtoleOperation>().mapArray(JSONString: operationsJson)
+        XCTAssertEqual(operations?.count, 1)
+
+        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io", applicationName: "appname")
+        let passingConditions = operations?[0].passingConditions(event: AppEvent("custom_value"), extole: extole)
+        XCTAssertEqual(passingConditions?.count, 1)
+        XCTAssertEqual(passingConditions?[0].getType(), ConditionType.CUSTOM)
+
+        let actionsToExecute = operations?[0].actionsToExecute(event: AppEvent("custom_value"), extole: extole)
+        XCTAssertEqual(actionsToExecute?.count, 1)
+        XCTAssertEqual(actionsToExecute?[0].getType(), ActionType.CUSTOM)
+
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.info)
+        operations?[0].executeActions(event: AppEvent("custom_value"), extole: extole)
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.disable)
+    }
+
     func testConfiguredFlowIsExecuted() {
         let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
-            applicationName: "iOS App", labels: ["business"])
+          applicationName: "iOS App", labels: ["business"])
 
         let expectation = self.expectation(description: "Wait for Operations")
         DispatchQueue.global().async {
-            let timeoutSeconds = 2
+            let timeoutSeconds = 5
             for _ in 0...5 {
                 print("There are \(extole.operations.count) operations")
-                if extole.operations.count != 6 {
+                if extole.operations.count != 8 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -118,12 +159,12 @@ class AppEngineTests: XCTestCase {
             }
         }
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.operations.count, 6)
+        XCTAssertEqual(extole.operations.count, 8)
     }
 
     func testMobileMonitorOperationsAreExecutedAndLogLevelIsChanged() {
         let extole: Extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
-            applicationName: "iOS App", labels: ["business"])
+          applicationName: "iOS App", labels: ["business"])
 
         let expectation = self.expectation(description: "Wait for Operations")
         DispatchQueue.global().async {
@@ -145,7 +186,7 @@ class AppEngineTests: XCTestCase {
 
     func testZonesArePrefetch() {
         let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
-            applicationName: "iOS App", labels: ["business"])
+          applicationName: "iOS App", labels: ["business"])
 
         let expectation = self.expectation(description: "Wait for Operations")
         DispatchQueue.global().async {

@@ -45,8 +45,8 @@ struct ExtoleLogHandler: LogHandler {
                     function: String,
                     line: UInt) {
         let prettyMetadata = metadata?.isEmpty ?? true
-            ? prettyMetadata
-            : prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))
+          ? prettyMetadata
+          : prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))
         if logLevel != .critical { // Loggger.Level.critical is considered .disable in ExtoleSdk
             let logMessage = "\(self.label) :\(prettyMetadata.map { " \($0)" } ?? "") \(message)\n"
             loggingMethod(logMessage, level)
@@ -55,17 +55,17 @@ struct ExtoleLogHandler: LogHandler {
 
     private func prettify(_ metadata: Logger.Metadata) -> String? {
         !metadata.isEmpty
-            ? metadata.lazy.sorted(by: { $0.key < $1.key }).map {
-                "\($0)=\($1)"
-            }
-            .joined(separator: ",")
-            : nil
+          ? metadata.lazy.sorted(by: { $0.key < $1.key }).map {
+              "\($0)=\($1)"
+          }
+          .joined(separator: ",")
+          : nil
     }
 }
 
 func doLogging(logMessage: String, level: Logger.Level, programDomain: String, customHeaders: [String: String]) {
     let creativeLoggerRequest = CreativeLoggingEndpoints
-        .createWithRequestBuilder(body: CreateCreativeLogRequest(message: logMessage, level: toCreativeLogLevel(level: level)))
+      .createWithRequestBuilder(body: CreateCreativeLogRequest(message: logMessage, level: toCreativeLogLevel(level: level)))
     httpCallFor(creativeLoggerRequest, programDomain + "/api", customHeaders).execute { _, error in
         if error != nil {
             NSLog("Failed to send logs" + error.debugDescription)
