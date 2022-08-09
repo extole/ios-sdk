@@ -163,7 +163,7 @@ class AppEngineTests: XCTestCase {
     }
 
     func testMobileMonitorOperationsAreExecutedAndLogLevelIsChanged() {
-        let extole: Extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
+        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
           applicationName: "iOS App", labels: ["business"])
 
         let expectation = self.expectation(description: "Wait for Operations")
@@ -171,7 +171,7 @@ class AppEngineTests: XCTestCase {
             let timeoutSeconds = 2
             for _ in 0...5 {
                 print("Current log level \(extole.getLogger().getLogLevel())")
-                if extole.getLogger().getLogLevel() != LogLevel.warn {
+                if extole.getLogger().getLogLevel() != LogLevel.debug && extole.zones.zonesResponse.values.count != 2 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -181,28 +181,7 @@ class AppEngineTests: XCTestCase {
         }
 
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.warn)
-    }
-
-    func testZonesArePrefetch() {
-        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
-          applicationName: "iOS App", labels: ["business"])
-
-        let expectation = self.expectation(description: "Wait for Operations")
-        DispatchQueue.global().async {
-            let timeoutSeconds = 2
-            for _ in 0...10 {
-                print("There are \(extole.zones.zonesResponse) fetched zones")
-                if extole.zones.zonesResponse.values.count != 2 {
-                    sleep(UInt32(timeoutSeconds))
-                } else {
-                    expectation.fulfill()
-                    break
-                }
-            }
-        }
-
-        waitForExpectations(timeout: 30, handler: nil)
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.debug)
         XCTAssertEqual(extole.zones.zonesResponse.values.count, 2)
 
         let keys = extole.zones.zonesResponse.keys
@@ -211,4 +190,5 @@ class AppEngineTests: XCTestCase {
         }
         XCTAssertEqual(keys, "apply_for_card,mobile_promotion,")
     }
+
 }
