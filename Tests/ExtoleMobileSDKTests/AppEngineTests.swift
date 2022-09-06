@@ -150,7 +150,7 @@ class AppEngineTests: XCTestCase {
             let timeoutSeconds = 5
             for _ in 0...5 {
                 print("There are \(extole.operations.count) operations")
-                if extole.operations.count != 8 {
+                if extole.operations.count != 9 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -159,7 +159,7 @@ class AppEngineTests: XCTestCase {
             }
         }
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.operations.count, 8)
+        XCTAssertEqual(extole.operations.count, 9)
     }
 
     func testMobileMonitorOperationsAreExecutedAndLogLevelIsChanged() {
@@ -189,6 +189,31 @@ class AppEngineTests: XCTestCase {
             partialResult.append("\(key),")
         }
         XCTAssertEqual(keys, "apply_for_card,mobile_promotion,")
+    }
+
+    func testOperationsAreConvertedToJson() {
+        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
+          applicationName: "iOS App", labels: ["business"])
+
+        let expectation = self.expectation(description: "Wait for Operations")
+        DispatchQueue.global().async {
+            let timeoutSeconds = 2
+            for _ in 0...5 {
+                print("Current log level \(extole.getLogger().getLogLevel())")
+                if extole.getLogger().getLogLevel() != LogLevel.debug && extole.zones.zonesResponse.values.count != 2 {
+                    sleep(UInt32(timeoutSeconds))
+                } else {
+                    expectation.fulfill()
+                    break
+                }
+            }
+        }
+
+        waitForExpectations(timeout: 15, handler: nil)
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.debug)
+        XCTAssertEqual(extole.zones.zonesResponse.values.count, 2)
+
+        XCTAssertNotNil(extole.getJsonConfiguration())
     }
 
 }

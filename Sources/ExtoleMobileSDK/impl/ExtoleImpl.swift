@@ -5,6 +5,7 @@ import Logging
 import SwiftEventBus
 import SwiftUI
 import CryptoKit
+import ObjectMapper
 
 public class ExtoleImpl: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
@@ -187,13 +188,17 @@ public class ExtoleImpl: Extole {
     }
 
     public func identify(_ identifier: String, _ data: [String: Any?] = [:],
-                          _ completion: @escaping (Id<Event>?, Error?) -> Void) {
+                         _ completion: @escaping (Id<Event>?, Error?) -> Void) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
         customData["email"] = identifier
         sendEvent("identify", customData, completion: completion)
+    }
+
+    public func getJsonConfiguration() -> String? {
+        Mapper<ExtoleOperation>().toJSONString(operations)
     }
 
     private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
