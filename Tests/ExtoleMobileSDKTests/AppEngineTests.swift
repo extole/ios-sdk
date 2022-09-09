@@ -110,12 +110,24 @@ class AppEngineTests: XCTestCase {
                                          "custom_parameter": [
                                            "custom_value"
                                          ]
+                                       },
+                                       {
+                                         "type": "CUSTOM",
+                                         "data": {
+                                           "key": "custom_value"
+                                         }
                                        }
                                      ],
                                      "actions": [
                                        {
                                          "type": "CUSTOM_ACTION",
                                          "custom_parameter": "custom_value"
+                                       },
+                                       {
+                                         "type": "CUSTOM",
+                                          "data": {
+                                            "key": "custom_value"
+                                          }
                                        }
                                      ]
                                    }
@@ -129,12 +141,14 @@ class AppEngineTests: XCTestCase {
 
         let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io", applicationName: "appname")
         let passingConditions = operations?[0].passingConditions(event: AppEvent("custom_value"), extole: extole)
-        XCTAssertEqual(passingConditions?.count, 1)
+        XCTAssertEqual(passingConditions?.count, 2)
         XCTAssertEqual(passingConditions?[0].getType(), ConditionType.CUSTOM)
+        XCTAssertEqual(passingConditions?[1].getType(), ConditionType.CUSTOM)
 
         let actionsToExecute = operations?[0].actionsToExecute(event: AppEvent("custom_value"), extole: extole)
-        XCTAssertEqual(actionsToExecute?.count, 1)
+        XCTAssertEqual(actionsToExecute?.count, 2)
         XCTAssertEqual(actionsToExecute?[0].getType(), ActionType.CUSTOM)
+        XCTAssertEqual(actionsToExecute?[1].getType(), ActionType.CUSTOM)
 
         XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.info)
         operations?[0].executeActions(event: AppEvent("custom_value"), extole: extole)
