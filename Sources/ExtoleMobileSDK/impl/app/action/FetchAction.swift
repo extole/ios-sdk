@@ -8,6 +8,7 @@ public class FetchAction: Action, CustomStringConvertible {
 
     var zones: [String]?
     var data: [String: String]?
+    var actionType: String = type.rawValue
     private var zoneService: ZoneService?
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
@@ -72,6 +73,7 @@ public class FetchAction: Action, CustomStringConvertible {
     public override func mapping(map: Map) {
         zones <- map["zones"]
         data <- map["data"]
+        actionType <- map["type"]
     }
 
     public var description: String { return "FetchAction[zones:\(zones), data:\(data)]" }

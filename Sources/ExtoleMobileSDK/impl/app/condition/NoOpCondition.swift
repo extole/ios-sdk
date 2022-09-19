@@ -5,6 +5,7 @@ class NoOpCondition: Condition {
 
     static var type: ConditionType = ConditionType.NOT_DEFINED
     var data: [String: String]?
+    var conditionType: String = type.rawValue
 
     public override init() {
         super.init()
@@ -24,5 +25,6 @@ class NoOpCondition: Condition {
 
     public override func mapping(map: Map) {
         data <- map["data"]
+        type <- map["type"]
     }
 }

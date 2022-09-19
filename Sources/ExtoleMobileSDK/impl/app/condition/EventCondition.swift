@@ -6,6 +6,7 @@ class EventCondition: Condition, CustomStringConvertible {
     var eventNames: [String]? = []
     var hasDataKeys: [String]? = []
     var hasDataValues: [String]? = []
+    var conditionType: String = type.rawValue
 
     public init(eventNames: [String], hasDataKeys: [String] = [], hasDataValues: [String] = []) {
         super.init()
@@ -53,6 +54,7 @@ class EventCondition: Condition, CustomStringConvertible {
         eventNames <- map["event_names"]
         hasDataKeys <- map["has_data_keys"]
         hasDataValues <- map["has_data_values"]
+        conditionType <- map["type"]
     }
 
     public var description: String { return "EventCondition[eventNames:\(eventNames), hasDataKeys:\(hasDataKeys), hasDataValue:\(hasDataValues)]" }
