@@ -3,8 +3,8 @@ import ObjectMapper
 
 public class NoOpAction: Action {
     public static var type: ActionType = ActionType.NOT_DEFINED
-    var data: [String: String]?
-    var actionType: String = type.rawValue
+    var data: [String: Any]?
+    var actionType: String = ConditionType.CUSTOM.rawValue
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
     }
