@@ -77,8 +77,8 @@ public class ExtoleImpl: Extole {
         }
     }
 
-    public func fetchZone(_ zoneName: String, completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
-        doZoneRequest(zoneName: zoneName) { [unowned self] response, error in
+    public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
+        doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
             if error != nil {
                 logger.error("""
                              Failed to render zone=\(zoneName),
@@ -256,8 +256,14 @@ public class ExtoleImpl: Extole {
         dispatchGroup?.leave()
     }
 
-    private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
-        var modifiedData = data
+    private func doZoneRequest(zoneName: String, data: [String: String], completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
+        var modifiedData: [String: String] = [:]
+        data.forEach { (key: String, value: String) in
+            modifiedData[key] = value
+        }
+        self.data.forEach { (key: String, value: String) in
+            modifiedData[key] = value
+        }
         modifiedData["labels"] = labels.joined(separator: ",")
         let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
           body: RenderZoneRequest(eventName: zoneName, data: modifiedData))

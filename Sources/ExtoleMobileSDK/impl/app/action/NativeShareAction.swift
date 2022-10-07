@@ -13,7 +13,7 @@ public class NativeShareAction: Action, CustomStringConvertible {
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         extole.getLogger().debug("NativeShareAction, event=\(event)")
         if zone != nil {
-            extole.fetchZone(zone ?? "") { [self] (zone: Zone?, _: Campaign?, _: Error?) in
+            extole.fetchZone(zone ?? "", [:]) { [self] (zone: Zone?, _: Campaign?, _: Error?) in
                 shareButton(message: zone?.get("message") as! String? ?? "", image: self.image)
             }
         } else {

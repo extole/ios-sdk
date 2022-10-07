@@ -26,12 +26,12 @@ class CampaignService: Campaign {
         campaignId
     }
 
-    func fetchZone(_ zoneName: String, completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
+    func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
         let localZoneContent = zone.get(zoneName) as? [String: Entry?]? ?? [:]
         if localZoneContent != nil {
             completion(Zone(zoneName: zoneName, campaignId: campaignId, content: localZoneContent), self, nil)
         } else {
-            extole.fetchZone(zoneName, completion: completion)
+            extole.fetchZone(zoneName, data, completion: completion)
         }
     }
 

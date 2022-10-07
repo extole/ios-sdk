@@ -6,7 +6,7 @@ import SwiftUI
 
 public protocol Extole {
 
-    func fetchZone(_ zoneName: String, completion: @escaping (Zone?, Campaign?, Error?) -> Void)
+    func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void)
 
     func getServices() -> ExtoleServices
 
