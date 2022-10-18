@@ -16,7 +16,7 @@ class AppEngine {
         AppEngine.eventsQueue.append(event)
         if event.eventName == AppEngine.LOAD_DONE_EVENT {
             AppEngine.appInitialized = true
-            extole.getLogger().error("App initialized, queued events \(AppEngine.eventsQueue)")
+            extole.getLogger().debug("App initialized, queued events \(AppEngine.eventsQueue)")
         }
         if AppEngine.LOAD_EVENTS.contains(event.eventName) {
             let queuedEvent = AppEngine.eventsQueue.removeLast()
@@ -25,7 +25,7 @@ class AppEngine {
 
         while AppEngine.appInitialized && !AppEngine.eventsQueue.isEmpty {
             let queuedEvent = AppEngine.eventsQueue.removeLast()
-            extole.getLogger().error("Handling event: \(queuedEvent)")
+            extole.getLogger().debug("Handling event: \(queuedEvent)")
             executeOperations(event: queuedEvent, extole: extole)
         }
 
