@@ -11,7 +11,8 @@ public class ExtoleImpl: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
     public var ACCESS_TOKEN_PREFERENCES_KEY: String = "access_token"
     public var EXTOLE_SDK_TAG: String = "EXTOLE"
-    private let PREFETCH_ZONE: String = "prefetch"
+    private let LOAD_OPERATIONS_ZONE: String = "mobile_bootstrap"
+    private let APP_INITIALIZED_EVENT: String = "app_initialized"
     private let LOG_LEVEL: String = "log_level"
     private let ACCESS_TOKEN_HEADER_NAME = "x-extole-token"
     private let CAMPAIGN_ID_HEADER_NAME = "x-extole-campaign"
@@ -128,8 +129,8 @@ public class ExtoleImpl: Extole {
 
     private func subscribe() {
         if !engineInitialized {
-            let conditions: [Condition] = [EventCondition(eventNames: ["app_initialized"])]
-            let actions: [Action] = [LoadOperationsAction(zones: ["mobile_operations"])]
+            let conditions: [Condition] = [EventCondition(eventNames: [APP_INITIALIZED_EVENT])]
+            let actions: [Action] = [LoadOperationsAction(zones: [LOAD_OPERATIONS_ZONE])]
             self.app = App(extole: self)
             operations.append(ExtoleOperation(conditions: conditions, actions: actions))
             SwiftEventBus.post("event", sender: AppEvent("app_initialized", [:]))
