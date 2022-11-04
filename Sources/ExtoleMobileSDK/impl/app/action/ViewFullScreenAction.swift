@@ -6,6 +6,7 @@ public class ViewFullScreenAction: Action, CustomStringConvertible {
     public static var type: ActionType = ActionType.VIEW_FULLSCREEN
 
     var zoneName: String?
+    var actionType: String = type.rawValue
     @State var isActive = true
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
@@ -41,6 +42,7 @@ public class ViewFullScreenAction: Action, CustomStringConvertible {
 
     public override func mapping(map: Map) {
         zoneName <- map["zone_name"]
+        actionType <- map["type"]
     }
 
     public var description: String { return "ViewFullScreenAction[zoneName:\(zoneName)]" }

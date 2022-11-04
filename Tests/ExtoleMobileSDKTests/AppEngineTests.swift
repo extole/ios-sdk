@@ -110,12 +110,24 @@ class AppEngineTests: XCTestCase {
                                          "custom_parameter": [
                                            "custom_value"
                                          ]
+                                       },
+                                       {
+                                         "type": "CUSTOM",
+                                         "data": {
+                                           "key": "custom_value"
+                                         }
                                        }
                                      ],
                                      "actions": [
                                        {
                                          "type": "CUSTOM_ACTION",
                                          "custom_parameter": "custom_value"
+                                       },
+                                       {
+                                         "type": "CUSTOM",
+                                          "data": {
+                                            "key": "custom_value"
+                                          }
                                        }
                                      ]
                                    }
@@ -129,12 +141,14 @@ class AppEngineTests: XCTestCase {
 
         let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io", applicationName: "appname")
         let passingConditions = operations?[0].passingConditions(event: AppEvent("custom_value"), extole: extole)
-        XCTAssertEqual(passingConditions?.count, 1)
+        XCTAssertEqual(passingConditions?.count, 2)
         XCTAssertEqual(passingConditions?[0].getType(), ConditionType.CUSTOM)
+        XCTAssertEqual(passingConditions?[1].getType(), ConditionType.CUSTOM)
 
         let actionsToExecute = operations?[0].actionsToExecute(event: AppEvent("custom_value"), extole: extole)
-        XCTAssertEqual(actionsToExecute?.count, 1)
+        XCTAssertEqual(actionsToExecute?.count, 2)
         XCTAssertEqual(actionsToExecute?[0].getType(), ActionType.CUSTOM)
+        XCTAssertEqual(actionsToExecute?[1].getType(), ActionType.CUSTOM)
 
         XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.info)
         operations?[0].executeActions(event: AppEvent("custom_value"), extole: extole)
@@ -150,7 +164,7 @@ class AppEngineTests: XCTestCase {
             let timeoutSeconds = 5
             for _ in 0...5 {
                 print("There are \(extole.operations.count) operations")
-                if extole.operations.count != 8 {
+                if extole.operations.count != 9 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -159,11 +173,11 @@ class AppEngineTests: XCTestCase {
             }
         }
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.operations.count, 8)
+        XCTAssertEqual(extole.operations.count, 9)
     }
 
     func testMobileMonitorOperationsAreExecutedAndLogLevelIsChanged() {
-        let extole: Extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
+        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
           applicationName: "iOS App", labels: ["business"])
 
         let expectation = self.expectation(description: "Wait for Operations")
@@ -171,7 +185,7 @@ class AppEngineTests: XCTestCase {
             let timeoutSeconds = 2
             for _ in 0...5 {
                 print("Current log level \(extole.getLogger().getLogLevel())")
-                if extole.getLogger().getLogLevel() != LogLevel.warn {
+                if extole.getLogger().getLogLevel() != LogLevel.debug && extole.zones.zonesResponse.values.count != 2 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -181,28 +195,7 @@ class AppEngineTests: XCTestCase {
         }
 
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.warn)
-    }
-
-    func testZonesArePrefetch() {
-        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
-          applicationName: "iOS App", labels: ["business"])
-
-        let expectation = self.expectation(description: "Wait for Operations")
-        DispatchQueue.global().async {
-            let timeoutSeconds = 2
-            for _ in 0...10 {
-                print("There are \(extole.zones.zonesResponse) fetched zones")
-                if extole.zones.zonesResponse.values.count != 2 {
-                    sleep(UInt32(timeoutSeconds))
-                } else {
-                    expectation.fulfill()
-                    break
-                }
-            }
-        }
-
-        waitForExpectations(timeout: 30, handler: nil)
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.debug)
         XCTAssertEqual(extole.zones.zonesResponse.values.count, 2)
 
         let keys = extole.zones.zonesResponse.keys
@@ -211,4 +204,30 @@ class AppEngineTests: XCTestCase {
         }
         XCTAssertEqual(keys, "apply_for_card,mobile_promotion,")
     }
+
+    func testOperationsAreConvertedToJson() {
+        let extole = ExtoleImpl(programDomain: "https://mobile-monitor.extole.io",
+          applicationName: "iOS App", labels: ["business"])
+
+        let expectation = self.expectation(description: "Wait for Operations")
+        DispatchQueue.global().async {
+            let timeoutSeconds = 2
+            for _ in 0...5 {
+                print("Current log level \(extole.getLogger().getLogLevel())")
+                if extole.getLogger().getLogLevel() != LogLevel.debug && extole.zones.zonesResponse.values.count != 2 {
+                    sleep(UInt32(timeoutSeconds))
+                } else {
+                    expectation.fulfill()
+                    break
+                }
+            }
+        }
+
+        waitForExpectations(timeout: 15, handler: nil)
+        XCTAssertEqual(extole.getLogger().getLogLevel(), LogLevel.debug)
+        XCTAssertEqual(extole.zones.zonesResponse.values.count, 2)
+
+        XCTAssertNotNil(extole.getJsonConfiguration())
+    }
+
 }

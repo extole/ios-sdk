@@ -3,9 +3,9 @@ import Foundation
 import ExtoleConsumerAPI
 
 public class Zone {
-    let zoneName: String
-    let campaignId: Id<Campaign>
-    let content: [String: Entry?]?
+    public let content: [String: Entry?]?
+    public let zoneName: String
+    public let campaignId: Id<Campaign>
 
     init(zoneName: String, campaignId: Id<Campaign>, content: [String: Entry?]?) {
         self.zoneName = zoneName

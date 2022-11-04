@@ -9,6 +9,7 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
 
     var zones: [String]?
     var data: [String: String]?
+    var actionType: String = type.rawValue
     private var zoneService: ZoneService?
 
     private static var loadOperationActions = Set<LoadOperationsAction>()
@@ -109,6 +110,7 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
     public override func mapping(map: Map) {
         zones <- map["zones"]
         data <- map["data"]
+        actionType <- map["type"]
     }
 
     public static func == (lhs: LoadOperationsAction, rhs: LoadOperationsAction) -> Bool {

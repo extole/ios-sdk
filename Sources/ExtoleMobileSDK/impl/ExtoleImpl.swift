@@ -5,12 +5,14 @@ import Logging
 import SwiftEventBus
 import SwiftUI
 import CryptoKit
+import ObjectMapper
 
 public class ExtoleImpl: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
     public var ACCESS_TOKEN_PREFERENCES_KEY: String = "access_token"
     public var EXTOLE_SDK_TAG: String = "EXTOLE"
-    private let PREFETCH_ZONE: String = "prefetch"
+    private let LOAD_OPERATIONS_ZONE: String = "mobile_bootstrap"
+    private let APP_INITIALIZED_EVENT: String = "app_initialized"
     private let LOG_LEVEL: String = "log_level"
     private let ACCESS_TOKEN_HEADER_NAME = "x-extole-token"
     private let CAMPAIGN_ID_HEADER_NAME = "x-extole-campaign"
@@ -76,8 +78,8 @@ public class ExtoleImpl: Extole {
         }
     }
 
-    public func fetchZone(_ zoneName: String, completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
-        doZoneRequest(zoneName: zoneName) { [unowned self] response, error in
+    public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
+        doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
             if error != nil {
                 logger.error("""
                              Failed to render zone=\(zoneName),
@@ -127,8 +129,8 @@ public class ExtoleImpl: Extole {
 
     private func subscribe() {
         if !engineInitialized {
-            let conditions: [Condition] = [EventCondition(eventNames: ["app_initialized"])]
-            let actions: [Action] = [LoadOperationsAction(zones: ["mobile_operations"])]
+            let conditions: [Condition] = [EventCondition(eventNames: [APP_INITIALIZED_EVENT])]
+            let actions: [Action] = [LoadOperationsAction(zones: [LOAD_OPERATIONS_ZONE])]
             self.app = App(extole: self)
             operations.append(ExtoleOperation(conditions: conditions, actions: actions))
             SwiftEventBus.post("event", sender: AppEvent("app_initialized", [:]))
@@ -187,13 +189,17 @@ public class ExtoleImpl: Extole {
     }
 
     public func identify(_ identifier: String, _ data: [String: Any?] = [:],
-                          _ completion: @escaping (Id<Event>?, Error?) -> Void) {
+                         _ completion: @escaping (Id<Event>?, Error?) -> Void) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
         customData["email"] = identifier
         sendEvent("identify", customData, completion: completion)
+    }
+
+    public func getJsonConfiguration() -> String? {
+        Mapper<ExtoleOperation>().toJSONString(operations)
     }
 
     private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
@@ -251,8 +257,14 @@ public class ExtoleImpl: Extole {
         dispatchGroup?.leave()
     }
 
-    private func doZoneRequest(zoneName: String, completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
-        var modifiedData = data
+    private func doZoneRequest(zoneName: String, data: [String: String], completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
+        var modifiedData: [String: String] = [:]
+        data.forEach { (key: String, value: String) in
+            modifiedData[key] = value
+        }
+        self.data.forEach { (key: String, value: String) in
+            modifiedData[key] = value
+        }
         modifiedData["labels"] = labels.joined(separator: ",")
         let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
           body: RenderZoneRequest(eventName: zoneName, data: modifiedData))

@@ -5,6 +5,7 @@ public class SetLogLevelAction: Action, CustomStringConvertible {
     public static var type: ActionType = ActionType.SET_LOG_LEVEL
 
     var logLevel: String?
+    var actionType: String = type.rawValue
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         extole.getLogger().debug("SetLogLevelAction, event=\(event)")
@@ -49,6 +50,7 @@ public class SetLogLevelAction: Action, CustomStringConvertible {
 
     public override func mapping(map: Map) {
         logLevel <- map["log_level"]
+        actionType <- map["type"]
     }
 
     public var description: String { return "SetLogLevel[logLevel:\(logLevel)]" }

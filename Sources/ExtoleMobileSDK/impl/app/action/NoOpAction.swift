@@ -3,6 +3,8 @@ import ObjectMapper
 
 public class NoOpAction: Action {
     public static var type: ActionType = ActionType.NOT_DEFINED
+    var data: [String: Any]?
+    var actionType: String = ConditionType.CUSTOM.rawValue
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
     }
@@ -12,7 +14,7 @@ public class NoOpAction: Action {
     }
 
     public override func getType() -> ActionType {
-        ActionType.NOT_DEFINED
+        ActionType.CUSTOM
     }
 
     public required init?(map: Map) {
@@ -20,5 +22,7 @@ public class NoOpAction: Action {
     }
 
     public override func mapping(map: Map) {
+        data <- map["data"]
+        actionType <- map["type"]
     }
 }

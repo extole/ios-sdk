@@ -8,11 +8,12 @@ public class NativeShareAction: Action, CustomStringConvertible {
     var zone: String?
     var message: String?
     var image: String?
+    var actionType: String = type.rawValue
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         extole.getLogger().debug("NativeShareAction, event=\(event)")
         if zone != nil {
-            extole.fetchZone(zone ?? "") { [self] (zone: Zone?, _: Campaign?, _: Error?) in
+            extole.fetchZone(zone ?? "", [:]) { [self] (zone: Zone?, _: Campaign?, _: Error?) in
                 shareButton(message: zone?.get("message") as! String? ?? "", image: self.image)
             }
         } else {
@@ -51,6 +52,7 @@ public class NativeShareAction: Action, CustomStringConvertible {
         zone <- map["zone"]
         message <- map["message"]
         image <- map["image"]
+        actionType <- map["type"]
     }
 
     public var description: String { return "NativeShareAction[zone:\(zone), message:\(message), image:\(image)]" }

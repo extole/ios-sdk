@@ -4,6 +4,7 @@ import SwiftUI
 public class PromptAction: Action, CustomStringConvertible {
     public static var type: ActionType = ActionType.PROMPT
     var message: String?
+    var actionType: String = type.rawValue
 
     @State var isShowing = true
 
@@ -36,6 +37,7 @@ public class PromptAction: Action, CustomStringConvertible {
 
     public override func mapping(map: Map) {
         message <- map["message"]
+        actionType <- map["type"]
     }
 
     public var description: String { return "PromptAction[message:\(message)]" }
