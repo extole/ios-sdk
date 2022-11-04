@@ -64,3 +64,5 @@ fastlane/screenshots
 
 .DS_Store
 .swiftpm
+
+.idea/

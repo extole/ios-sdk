@@ -1,0 +1,52 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Alamofire",
+        "repositoryURL": "https://github.com/Alamofire/Alamofire.git",
+        "state": {
+          "branch": null,
+          "revision": "8dd85aee02e39dd280c75eef88ffdb86eed4b07b",
+          "version": "5.6.2"
+        }
+      },
+      {
+        "package": "ExtoleConsumerAPI",
+        "repositoryURL": "https://github.com/extole/ios-consumer-api.git",
+        "state": {
+          "branch": null,
+          "revision": "1042cbbf3e40d673995b35ac91ee7696abbefcd6",
+          "version": "0.0.17"
+        }
+      },
+      {
+        "package": "ObjectMapper",
+        "repositoryURL": "https://github.com/tristanhimmelman/ObjectMapper.git",
+        "state": {
+          "branch": null,
+          "revision": "0b96a734de3ea1c87374ae677064f86adb0716ec",
+          "version": "4.2.0"
+        }
+      },
+      {
+        "package": "swift-log",
+        "repositoryURL": "https://github.com/apple/swift-log.git",
+        "state": {
+          "branch": null,
+          "revision": "6fe203dc33195667ce1759bf0182975e4653ba1c",
+          "version": "1.4.4"
+        }
+      },
+      {
+        "package": "SwiftEventBus",
+        "repositoryURL": "https://github.com/cesarferreira/SwiftEventBus.git",
+        "state": {
+          "branch": null,
+          "revision": "a30ff35e616f507d8a8d122dac32a2150371a87e",
+          "version": "5.1.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
