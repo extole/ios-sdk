@@ -4,6 +4,8 @@ public protocol ExtoleLogger {
 
     func setLogLevel(level: LogLevel)
 
+    func getLogLevel() -> LogLevel
+
     func debug(_ message: String, args: Any?...)
 
     func info(_ message: String, args: Any?...)

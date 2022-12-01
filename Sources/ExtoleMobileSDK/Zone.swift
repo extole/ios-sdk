@@ -3,18 +3,26 @@ import Foundation
 import ExtoleConsumerAPI
 
 public class Zone {
-    let zoneName: String
-    let campaignId: Id<Campaign>
-    let content: [String: Entry?]?
+    public let content: [String: Entry?]?
+    public let zoneName: String
+    public let campaignId: Id<Campaign>
+    private let extole: Extole
 
-    init(zoneName: String, campaignId: Id<Campaign>, content: [String: Entry?]?) {
+    init(zoneName: String, campaignId: Id<Campaign>, content: [String: Entry?]?, extole: Extole) {
         self.zoneName = zoneName
         self.campaignId = campaignId
         self.content = content
+        self.extole = extole
     }
 
     public func getName() -> String {
         zoneName
+    }
+
+    public func tap(completion: @escaping (Id<Event>?, Error?) -> Void) {
+        var data: [String: String] = [:]
+        data["target"] = "campaign_id:" + campaignId.value
+        extole.sendEvent(zoneName + "_tap", data, completion: completion)
     }
 
     public func get(_ dottedPath: String) -> Any? {
