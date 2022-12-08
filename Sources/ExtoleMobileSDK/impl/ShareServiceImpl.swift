@@ -20,6 +20,6 @@ class ShareServiceImpl: ShareService {
         customData["share.channel"] = "EXTOLE_EMAIL"
         customData["labels"] = extole.labels.joined(separator: ",")
 
-        extole.sendEvent("share", customData, completion: completion)
+        extole.sendEvent("share", customData, completion)
     }
 }

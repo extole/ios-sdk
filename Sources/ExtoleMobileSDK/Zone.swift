@@ -19,10 +19,16 @@ public class Zone {
         zoneName
     }
 
-    public func tap(completion: @escaping (Id<Event>?, Error?) -> Void) {
+    public func tap() {
         var data: [String: String] = [:]
         data["target"] = "campaign_id:" + campaignId.value
-        extole.sendEvent(zoneName + "_tap", data, completion: completion)
+        extole.sendEvent(zoneName + "_tap", data, nil)
+    }
+
+    public func viewed() {
+        var data: [String: String] = [:]
+        data["target"] = "campaign_id:" + campaignId.value
+        extole.sendEvent(zoneName + "_viewed", data, nil)
     }
 
     public func get(_ dottedPath: String) -> Any? {

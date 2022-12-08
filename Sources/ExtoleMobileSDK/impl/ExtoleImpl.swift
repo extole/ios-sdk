@@ -98,7 +98,7 @@ public class ExtoleImpl: Extole {
     }
 
     public func sendEvent(_ eventName: String, _ data: [String: Any?],
-                          completion: @escaping (Id<Event>?, Error?) -> Void) {
+                          _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
@@ -120,7 +120,7 @@ public class ExtoleImpl: Extole {
               if response?.header[ACCESS_TOKEN_HEADER_NAME] != nil {
                   setAccessToken(accessToken: response?.header[ACCESS_TOKEN_HEADER_NAME] ?? "")
               }
-              completion(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
+              completion?(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
               dispatchGroup.leave()
           }
         dispatchGroup.wait(timeout: .now() + 5)
@@ -189,13 +189,13 @@ public class ExtoleImpl: Extole {
     }
 
     public func identify(_ identifier: String, _ data: [String: Any?] = [:],
-                         _ completion: @escaping (Id<Event>?, Error?) -> Void) {
+                         _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
         customData["email"] = identifier
-        sendEvent("identify", customData, completion: completion)
+        sendEvent("identify", customData, completion)
     }
 
     public func getJsonConfiguration() -> String? {

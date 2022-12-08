@@ -164,7 +164,7 @@ class AppEngineTests: XCTestCase {
             let timeoutSeconds = 5
             for _ in 0...5 {
                 print("There are \(extole.operations.count) operations")
-                if extole.operations.count != 5 {
+                if extole.operations.count != 4 {
                     sleep(UInt32(timeoutSeconds))
                 } else {
                     expectation.fulfill()
@@ -173,7 +173,7 @@ class AppEngineTests: XCTestCase {
             }
         }
         waitForExpectations(timeout: 15, handler: nil)
-        XCTAssertEqual(extole.operations.count, 5)
+        XCTAssertEqual(extole.operations.count, 4)
     }
 
     func testMobileMonitorOperationsAreExecutedAndLogLevelIsChanged() {
@@ -202,7 +202,7 @@ class AppEngineTests: XCTestCase {
             .sorted().reduce(into: "") { (partialResult: inout String, key: String) in
             partialResult.append("\(key),")
         }
-        XCTAssertEqual(keys, "cta_prefetch,")
+        XCTAssertEqual(keys, "mobile_cta,")
     }
 
     func testOperationsAreConvertedToJson() {

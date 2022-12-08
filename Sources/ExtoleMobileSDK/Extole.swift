@@ -10,10 +10,10 @@ public protocol Extole {
 
     func getServices() -> ExtoleServices
 
-    func sendEvent(_ eventName: String, _ data: [String: Any?], completion: @escaping (Id<Event>?, Error?) -> Void)
+    func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?)
 
     func identify(_ email: String, _ data: [String: Any?],
-                  _ completion: @escaping (Id<Event>?, Error?) -> Void)
+                  _ completion: ((Id<Event>?, Error?) -> Void)?)
 
     func webView(headers: [String: String], data: [String: String]) -> ExtoleWebView
 

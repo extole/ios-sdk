@@ -41,13 +41,13 @@ class CampaignService: Campaign {
         extole.getServices()
     }
 
-    func sendEvent(_ eventName: String, _ data: [String: Any?], completion: @escaping (Id<Event>?, Error?) -> Void) {
+    func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var requestData = data
         requestData["target"] = "campaign_id:" + campaignId.value
-        extole.sendEvent(eventName, requestData, completion: completion)
+        extole.sendEvent(eventName, requestData, completion)
     }
 
-    func identify(_ email: String, _ data: [String: Any?], _ completion: @escaping (Id<Event>?, Error?) -> Void) {
+    func identify(_ email: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
         extole.identify(email, data, completion)
     }
 
