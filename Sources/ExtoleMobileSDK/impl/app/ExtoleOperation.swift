@@ -1,5 +1,6 @@
 import Foundation
 import ObjectMapper
+import UIKit
 
 public class ExtoleOperation: Mappable {
     var actions: [Action] = []
@@ -13,7 +14,9 @@ public class ExtoleOperation: Mappable {
     public func executeActions(event: AppEvent, extole: ExtoleImpl) {
         actionsToExecute(event: event, extole: extole).forEach { action in
             extole.getLogger().debug("Executing \(action)")
-            action.execute(event: event, extole: extole)
+            if !extole.getDisabledActions().contains(action.getType()) {
+                action.execute(event: event, extole: extole)
+            }
         }
     }
 

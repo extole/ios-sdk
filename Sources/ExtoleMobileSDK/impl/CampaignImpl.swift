@@ -3,6 +3,7 @@ import WebKit
 import ExtoleConsumerAPI
 
 class CampaignService: Campaign {
+
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
     public var ACCESS_TOKEN_PREFERENCES_KEY: String = "access_token"
     public var EXTOLE_SDK_TAG: String = "EXTOLE"
@@ -35,6 +36,10 @@ class CampaignService: Campaign {
         } else {
             extole.fetchZone(zoneName, data, completion: completion)
         }
+    }
+
+    func logout() {
+        extole.logout()
     }
 
     func getServices() -> ExtoleServices {

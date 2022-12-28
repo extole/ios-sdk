@@ -21,6 +21,8 @@ public protocol Extole {
 
     func getView() -> ExtoleView
 
+    func logout()
+
     func copy(programDomain: String?, applicationName: String?, email: String?, applicationData: [String: String]?,
               data: [String: String]?, labels: [String]?, sandbox: String?, debugEnabled: Bool?, logHandlers: [LogHandler],
               listenToEvents: Bool) -> Extole

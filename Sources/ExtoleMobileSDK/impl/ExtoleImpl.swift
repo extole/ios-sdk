@@ -32,7 +32,6 @@ public class ExtoleImpl: Extole {
     var observableUi = ExtoleObservableUi()
 
     private var sandbox: String
-    private var debugEnabled: Bool
     private var personIdentifier: String?
 
     private let persistance: UserDefaults = UserDefaults.standard
@@ -40,19 +39,24 @@ public class ExtoleImpl: Extole {
     private var logger: ExtoleLogger
     private var engineInitialized = false
     private var app: App?
+    private var logHandlers: [LogHandler] = []
+    private var disabledActions: [ActionType] = []
+    private var listenToEvents: Bool
 
     public init(programDomain: String, applicationName: String, personIdentifier: String? = nil,
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
-                sandbox: String = "prod-prod", debugEnabled: Bool = false, logHandlers: [LogHandler] = [],
-                listenToEvents: Bool = true) {
+                sandbox: String = "production-production", logHandlers: [LogHandler] = [],
+                listenToEvents: Bool = true, disabledActions: [ActionType] = []) {
         self.programDomain = programDomain
         self.appName = applicationName
         self.appData = applicationData
         self.data = data
         self.labels = labels
         self.sandbox = sandbox
-        self.debugEnabled = debugEnabled
         self.personIdentifier = personIdentifier
+        self.logHandlers = logHandlers
+        self.listenToEvents = listenToEvents
+        self.disabledActions = disabledActions
 
         var loggerContext: [String: String] = [:]
         loggerContext["tags"] = ["mobile-sdk"].joined(separator: ",")
@@ -79,6 +83,11 @@ public class ExtoleImpl: Extole {
     }
 
     public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
+        let zoneResponse: Zone? = self.zones.zonesResponse[zoneName] ?? nil
+        if let zone = zoneResponse {
+            let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
+            completion(zone, campaign, nil)
+        } else {
         doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
             if error != nil {
                 logger.error("""
@@ -89,7 +98,9 @@ public class ExtoleImpl: Extole {
             let campaignId = response?.header[CAMPAIGN_ID_HEADER_NAME] ?? ""
             let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
             let campaign = CampaignService(Id(campaignId), zone, self)
+            self.zones.zonesResponse[zoneName] = zone
             completion(zone, campaign, error)
+        }
         }
     }
 
@@ -117,8 +128,11 @@ public class ExtoleImpl: Extole {
                                data=\(data), error=\(String(describing: error?.localizedDescription))
                                """)
               }
-              if response?.header[ACCESS_TOKEN_HEADER_NAME] != nil {
+              let accessTokenHeaderValue = response?.header[ACCESS_TOKEN_HEADER_NAME]
+              if accessTokenHeaderValue != nil && accessTokenHeaderValue != getAccessToken() {
+                  clearZonesCache()
                   setAccessToken(accessToken: response?.header[ACCESS_TOKEN_HEADER_NAME] ?? "")
+                  SwiftEventBus.post("access_token_changed", sender: AppEvent(eventName, data))
               }
               completion?(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
               dispatchGroup.leave()
@@ -145,12 +159,11 @@ public class ExtoleImpl: Extole {
 
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
-                     labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil,
-                     logHandlers: [LogHandler] = [], listenToEvents: Bool = true) -> Extole {
+                     labels: [String]? = nil, sandbox: String? = nil, logHandlers: [LogHandler] = [],
+                     listenToEvents: Bool = true) -> Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
           personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
-          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox,
-          debugEnabled: debugEnabled ?? self.debugEnabled, logHandlers: logHandlers, listenToEvents: listenToEvents)
+          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents)
         app?.extole = extole
         return extole
     }
@@ -196,6 +209,19 @@ public class ExtoleImpl: Extole {
         }
         customData["email"] = identifier
         sendEvent("identify", customData, completion)
+    }
+
+    public func logout() {
+        clearAccessToken()
+        clearZonesCache()
+        let dispatchGroup = DispatchGroup()
+        dispatchGroup.enter()
+        createAccessToken(completion: { _ in }, dispatchGroup)
+        _ = dispatchGroup.wait(timeout: .now() + 3.0)
+    }
+
+    public func getDisabledActions() -> [ActionType] {
+        return disabledActions
     }
 
     public func getJsonConfiguration() -> String? {
@@ -255,6 +281,19 @@ public class ExtoleImpl: Extole {
         customHeaders["Authorization"] = "Bearer " + accessToken
         persistance.setValue(accessToken, forKey: ACCESS_TOKEN_PREFERENCES_KEY)
         dispatchGroup?.leave()
+    }
+
+    private func getAccessToken() -> String? {
+        return persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY)
+    }
+
+    private func clearAccessToken() {
+        persistance.setValue("", forKey: ACCESS_TOKEN_PREFERENCES_KEY)
+        customHeaders["Authorization"] = ""
+    }
+
+    private func clearZonesCache() {
+        self.zones = Zones()
     }
 
     private func doZoneRequest(zoneName: String, data: [String: String], completion: @escaping (Response<ZoneResponse>?, Error?) -> Void) {
