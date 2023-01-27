@@ -9,7 +9,7 @@ public class PromptAction: Action, CustomStringConvertible {
     @State var isShowing = true
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
-        extole.getLogger().error("PromptAction, event=\(event.eventName), message=\(message ?? "")")
+        extole.getLogger().debug("PromptAction, event=\(event.eventName), message=\(message ?? "")")
         isShowing = true
         extole.observableUi.bodyContent = AnyView(ToastView(message ?? ""))
     }

@@ -149,7 +149,7 @@ public class ExtoleImpl: Extole {
             operations.append(ExtoleOperation(conditions: conditions, actions: actions))
             SwiftEventBus.post("event", sender: AppEvent("app_initialized", [:]))
             engineInitialized = true
-            logger.error("App initialized")
+            logger.debug("App initialized")
         }
     }
 

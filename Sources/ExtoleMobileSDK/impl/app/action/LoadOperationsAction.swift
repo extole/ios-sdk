@@ -17,7 +17,7 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         removeExecutedActionsFromQueue()
 
-        extole.getLogger().error("LoadOperationsAction, event=\(event.eventName)")
+        extole.getLogger().debug("LoadOperationsAction, event=\(event.eventName)")
         let allData = prepareRequestData(extole: extole)
 
         zoneFetcher = ZoneFetcher(programDomain: extole.programDomain, logger: extole.getLogger(), extole: extole)
@@ -35,7 +35,7 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
                     })
                     addAdditionalLoadOperationsToTheQueue(operations: operations)
 
-                    extole.getLogger().error("Executing, operations=\(operations ?? [])")
+                    extole.getLogger().debug("Executing, operations=\(operations ?? [])")
                     AppEngine(operations ?? []).execute(event: AppEvent("on_load"), extole: extole)
                 }
             })
