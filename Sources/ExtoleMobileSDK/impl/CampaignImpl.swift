@@ -29,12 +29,12 @@ class CampaignService: Campaign {
 
     func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
         let localZoneContent = zone.get(zoneName) as? [String: Entry?]? ?? [:]
-        var requestData = data
-        requestData["target"] = "campaign_id:" + campaignId.value
         if localZoneContent != nil {
             completion(Zone(zoneName: zoneName, campaignId: campaignId, content: localZoneContent, extole: extole), self, nil)
         } else {
-            extole.fetchZone(zoneName, data, completion: completion)
+            var requestData = data
+            requestData["target"] = "campaign_id:" + campaignId.value
+            extole.fetchZone(zoneName, requestData, completion: completion)
         }
     }
 

@@ -88,19 +88,19 @@ public class ExtoleImpl: Extole {
             let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
             completion(zone, campaign, nil)
         } else {
-        doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
-            if error != nil {
-                logger.error("""
-                             Failed to render zone=\(zoneName),
-                             data=\(data), errorCode=\(String(describing: error?.localizedDescription))
-                             """)
+            doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
+                if error != nil {
+                    logger.error("""
+                                 Failed to render zone=\(zoneName),
+                                 data=\(data), errorCode=\(String(describing: error?.localizedDescription))
+                                 """)
+                }
+                let campaignId = response?.body?.campaignId ?? ""
+                let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
+                let campaign = CampaignService(Id(campaignId), zone, self)
+                self.zones.zonesResponse[zoneName] = zone
+                completion(zone, campaign, error)
             }
-            let campaignId = response?.header[CAMPAIGN_ID_HEADER_NAME] ?? ""
-            let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
-            let campaign = CampaignService(Id(campaignId), zone, self)
-            self.zones.zonesResponse[zoneName] = zone
-            completion(zone, campaign, error)
-        }
         }
     }
 
