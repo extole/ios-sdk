@@ -120,7 +120,7 @@ public class ExtoleImpl: Extole {
           }))
         let dispatchGroup = DispatchGroup()
         dispatchGroup.enter()
-        httpCallFor(request, self.programDomain, self.customHeaders)
+        httpCallFor(request, self.programDomain, self.getHeaders())
           .execute { [self] (response, error) in
               if error != nil {
                   logger.error("""
@@ -131,7 +131,7 @@ public class ExtoleImpl: Extole {
               let accessTokenHeaderValue = response?.header[ACCESS_TOKEN_HEADER_NAME]
               if accessTokenHeaderValue != nil && accessTokenHeaderValue != getAccessToken() {
                   clearZonesCache()
-                  setAccessToken(accessToken: response?.header[ACCESS_TOKEN_HEADER_NAME] ?? "")
+                  setAccessToken(accessToken: accessTokenHeaderValue ?? "")
                   SwiftEventBus.post("access_token_changed", sender: AppEvent(eventName, data))
               }
               completion?(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
@@ -195,6 +195,7 @@ public class ExtoleImpl: Extole {
         customHeaders[APP_HEADER] = appName
         customHeaders[APP_VERSION_HEADER] = versionAndBuildNumber
         customHeaders[APP_TYPE_HEADER] = "mobile-sdk-ios"
+        customHeaders["Accept"] = "application/json"
         if let bundleIdentifier = Bundle.main.bundleIdentifier {
             customHeaders[APP_SHA_HEADER] = sha256(bundleIdentifier)
         }
@@ -237,7 +238,7 @@ public class ExtoleImpl: Extole {
         } else {
             customHeaders["Authorization"] = "Bearer " + accessToken
             let request = AuthorizationEndpoints.getTokenDetailsWithRequestBuilder()
-            httpCallFor(request, self.programDomain + "/api", self.customHeaders)
+            httpCallFor(request, self.programDomain + "/api", self.getHeaders())
               .execute { [self] (_: Response<TokenResponse>?, error: Error?) in
                   if error != nil {
                       switch error as! ErrorResponse? {
@@ -304,11 +305,13 @@ public class ExtoleImpl: Extole {
         self.data.forEach { (key: String, value: String) in
             modifiedData[key] = value
         }
-        modifiedData["labels"] = labels.joined(separator: ",")
+        if !labels.isEmpty {
+            modifiedData["labels"] = labels.joined(separator: ",")
+        }
         let requestBuilder = ZoneEndpoints.renderWithRequestBuilder(
           body: RenderZoneRequest(eventName: zoneName, data: modifiedData))
 
-        httpCallFor(requestBuilder, self.programDomain + "/api", self.customHeaders)
+        httpCallFor(requestBuilder, self.programDomain + "/api", self.getHeaders())
           .execute { (response: Response<ZoneResponse>?, error: Error?) in
               completion(response, error)
           }
