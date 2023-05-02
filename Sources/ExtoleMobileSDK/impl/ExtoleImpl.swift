@@ -229,6 +229,10 @@ public class ExtoleImpl: Extole {
         Mapper<ExtoleOperation>().toJSONString(operations)
     }
 
+    public func getAccessToken() -> String? {
+        return persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY)
+    }
+    
     private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
         let dispatchGroup = DispatchGroup()
         let accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
@@ -282,10 +286,6 @@ public class ExtoleImpl: Extole {
         customHeaders["Authorization"] = "Bearer " + accessToken
         persistance.setValue(accessToken, forKey: ACCESS_TOKEN_PREFERENCES_KEY)
         dispatchGroup?.leave()
-    }
-
-    private func getAccessToken() -> String? {
-        return persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY)
     }
 
     private func clearAccessToken() {
