@@ -12,8 +12,12 @@ public protocol Extole {
 
     func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?)
 
-    func identify(_ email: String, _ data: [String: Any?],
-                  _ completion: ((Id<Event>?, Error?) -> Void)?)
+    func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?,
+                   _ jwt: String?)
+
+    func identify(_ email: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?)
+
+    func identifyJwt(_ jwt: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?)
 
     func webView(headers: [String: String], data: [String: String]) -> ExtoleWebView
 
