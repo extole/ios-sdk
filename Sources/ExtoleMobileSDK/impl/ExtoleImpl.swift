@@ -46,7 +46,8 @@ public class ExtoleImpl: Extole {
     public init(programDomain: String, applicationName: String, personIdentifier: String? = nil,
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
                 sandbox: String = "production-production", logHandlers: [LogHandler] = [],
-                listenToEvents: Bool = true, disabledActions: [ActionType] = []) {
+                listenToEvents: Bool = true, disabledActions: [ActionType] = [],
+                jwt: String? = nil) {
         self.programDomain = programDomain
         self.appName = applicationName
         self.appData = applicationData
@@ -67,14 +68,9 @@ public class ExtoleImpl: Extole {
           }
           .joined(separator: ",")
         self.logger = ExtoleLoggerImpl(programDomain, "", loggerContext, logHandlers)
-        initAccessToken { [unowned self] (accessToken: String) in
+        initAccessToken(email: personIdentifier, jwt: jwt) { [unowned self] (accessToken: String) in
             extoleServices = ExtoleServices(self)
             logger = ExtoleLoggerImpl(programDomain, accessToken, loggerContext, logHandlers)
-            logger.debug("Identifying with \(personIdentifier ?? "")")
-            if let personIdentifier = personIdentifier {
-                identify(personIdentifier) { (_, _) in
-                }
-            }
 
             if listenToEvents {
                 subscribe()
@@ -165,10 +161,10 @@ public class ExtoleImpl: Extole {
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
                      labels: [String]? = nil, sandbox: String? = nil, logHandlers: [LogHandler] = [],
-                     listenToEvents: Bool = true) -> Extole {
+                     listenToEvents: Bool = true, jwt: String? = nil) -> Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
           personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
-          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents)
+          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents, jwt: jwt)
         app?.extole = extole
         return extole
     }
@@ -208,12 +204,18 @@ public class ExtoleImpl: Extole {
     }
 
     public func identify(_ identifier: String, _ data: [String: Any?] = [:], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+        return self.identify(identifier, data, nil, completion)
+    }
+
+    private func identify(_ email: String?, _ data: [String: Any?], _ jwt: String?, _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
-        customData["email"] = identifier
-        sendEvent("identify", customData, completion)
+        if let identifier = email {
+            customData["email"] = identifier
+        }
+        sendEvent("identify", customData, completion, jwt)
     }
 
     public func identifyJwt(_ jwt: String, _ data: [String: Any?] = [:], _ completion: ((Id<Event>?, Error?) -> Void)?) {
@@ -225,7 +227,7 @@ public class ExtoleImpl: Extole {
         clearZonesCache()
         let dispatchGroup = DispatchGroup()
         dispatchGroup.enter()
-        createAccessToken(completion: { _ in }, dispatchGroup)
+        createAccessToken(email: "", jwt: nil, completion: { _ in }, dispatchGroup)
         _ = dispatchGroup.wait(timeout: .now() + 3.0)
     }
 
@@ -241,12 +243,12 @@ public class ExtoleImpl: Extole {
         return persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY)
     }
 
-    private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
+    private func initAccessToken(email: String?, jwt: String?, completion: @escaping (_ accessToken: String) -> Void) {
         let dispatchGroup = DispatchGroup()
         let accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
         dispatchGroup.enter()
         if accessToken.isEmpty {
-            createAccessToken(completion: completion, dispatchGroup)
+            createAccessToken(email: email, jwt: jwt, completion: completion, dispatchGroup)
         } else {
             customHeaders["Authorization"] = "Bearer " + accessToken
             let request = AuthorizationEndpoints.getTokenDetailsWithRequestBuilder()
@@ -255,7 +257,7 @@ public class ExtoleImpl: Extole {
                   if error != nil {
                       switch error as! ErrorResponse? {
                       case .error(403, _, _):
-                          createAccessToken(completion: completion, dispatchGroup)
+                          createAccessToken(email: email, jwt: jwt, completion: completion, dispatchGroup)
                       default:
                           dispatchGroup.leave()
                       }
@@ -279,8 +281,8 @@ public class ExtoleImpl: Extole {
         }
     }
 
-    private func createAccessToken(completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {
-        let request = AuthorizationEndpoints.createTokenWithRequestBuilder()
+    private func createAccessToken(email: String?, jwt: String?, completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {
+        let request = AuthorizationEndpoints.createTokenWithRequestBuilder(body: CreateTokenRequest(jwt: jwt, email: email))
         httpCallFor(request, self.programDomain + "/api", self.customHeaders)
           .execute { [self] (tokenResponse: Response<TokenResponse>?, _: Error?) in
               let accessToken = tokenResponse?.body?.accessToken ?? ""

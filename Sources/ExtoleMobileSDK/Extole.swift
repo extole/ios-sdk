@@ -29,7 +29,7 @@ public protocol Extole {
 
     func copy(programDomain: String?, applicationName: String?, email: String?, applicationData: [String: String]?,
               data: [String: String]?, labels: [String]?, sandbox: String?, debugEnabled: Bool?, logHandlers: [LogHandler],
-              listenToEvents: Bool) -> Extole
+              listenToEvents: Bool, jwt: String?) -> Extole
 
     var EXTOLE_SDK_TAG: String { get }
     var ACCESS_TOKEN_PREFERENCES_KEY: String { get }
@@ -40,10 +40,10 @@ extension Extole {
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
                      labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil, logHandlers: [LogHandler] = [],
-                     listenToEvents: Bool = true) -> Extole {
+                     listenToEvents: Bool = true, jwt: String? = nil) -> Extole {
         return copy(programDomain: programDomain, applicationName: applicationName, email: email,
           applicationData: applicationData, data: data, labels: labels, sandbox: sandbox, debugEnabled: debugEnabled, logHandlers: logHandlers,
-          listenToEvents: listenToEvents)
+          listenToEvents: listenToEvents, jwt: jwt)
     }
 
     public func webView(headers: [String: String] = [:], data: [String: String] = [:]) -> ExtoleWebView {
