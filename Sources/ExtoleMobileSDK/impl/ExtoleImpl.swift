@@ -245,6 +245,9 @@ public class ExtoleImpl: Extole {
 
     private func initAccessToken(email: String?, jwt: String?, completion: @escaping (_ accessToken: String) -> Void) {
         let dispatchGroup = DispatchGroup()
+        if email != nil || jwt != nil {
+            clearAccessToken()
+        }
         let accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
         dispatchGroup.enter()
         if accessToken.isEmpty {
