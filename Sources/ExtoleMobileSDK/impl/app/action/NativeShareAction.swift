@@ -55,6 +55,6 @@ public class NativeShareAction: Action, CustomStringConvertible {
         actionType <- map["type"]
     }
 
-    public var description: String { return "NativeShareAction[zone:\(zone), message:\(message), image:\(image)]" }
+    public var description: String { return "NativeShareAction[zone:\(zone ?? ""), message:\(message ?? ""), image:\(image ?? "")]" }
 
 }

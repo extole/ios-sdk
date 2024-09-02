@@ -14,7 +14,7 @@ public class FetchAction: Action, CustomStringConvertible {
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         extole.getLogger().debug("FetchAction, event=\(event)")
 
-        var allData = prepareRequestData(extole: extole)
+        let allData = prepareRequestData(extole: extole)
         zoneFetcher = ZoneFetcher(programDomain: extole.programDomain, logger: extole.getLogger(), extole: extole)
         zoneFetcher?.getZones(zonesName: zones ?? [], data: allData,
             programLabels: extole.labels, customHeaders: extole.getHeaders()) { [self] response in
@@ -26,7 +26,7 @@ public class FetchAction: Action, CustomStringConvertible {
 
     private func prepareRequestData(extole: ExtoleImpl) -> [String: String] {
         let identifierManager = ASIdentifierManager.shared()
-        var systemVersion = UIDevice.current.systemVersion
+        let systemVersion = UIDevice.current.systemVersion
         var deviceId = ""
         if identifierManager.isAdvertisingTrackingEnabled {
             deviceId = identifierManager.advertisingIdentifier.uuidString

@@ -122,5 +122,5 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
         hasher.combine(data)
     }
 
-    public var description: String { return "LoadOperationsAction[zones:\(zones), data:\(data)]" }
+    public var description: String { return "LoadOperationsAction[zones:\(zones ?? []), data:\(data ?? [:])]" }
 }

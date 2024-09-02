@@ -40,7 +40,7 @@ public class PromptAction: Action, CustomStringConvertible {
         actionType <- map["type"]
     }
 
-    public var description: String { return "PromptAction[message:\(message)]" }
+    public var description: String { return "PromptAction[message:\(message ?? "")]" }
 }
 
 struct ToastView: View {

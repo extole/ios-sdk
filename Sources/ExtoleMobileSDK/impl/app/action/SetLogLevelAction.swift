@@ -53,5 +53,5 @@ public class SetLogLevelAction: Action, CustomStringConvertible {
         actionType <- map["type"]
     }
 
-    public var description: String { return "SetLogLevel[logLevel:\(logLevel)]" }
+    public var description: String { return "SetLogLevel[logLevel:\(logLevel ?? "")]" }
 }

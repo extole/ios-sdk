@@ -54,7 +54,7 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
     func getWebView() -> WKWebView {
         webView
     }
-
+    
     func load(_ zone: String) {
         var urlComps = URLComponents(string: "\(programDomain)/zone/\(zone)")!
         urlComps.queryItems = queryParameters.map { (key, value) in
@@ -84,8 +84,8 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         let accessToken = headers["Authorization"]?.replacingOccurrences(of: "Bearer ", with: "")
         if accessToken != nil {
-            NSLog("WebView setting accessTokenTo: \(accessToken)")
-            webView.evaluateJavaScript("extole.tokenStore.set('\(accessToken)')")
+            NSLog("WebView setting accessTokenTo: \(accessToken ?? "")")
+            webView.evaluateJavaScript("extole.tokenStore.set('\(accessToken ?? "")')")
         }
     }
 }

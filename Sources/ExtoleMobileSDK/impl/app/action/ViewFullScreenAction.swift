@@ -13,8 +13,12 @@ public class ViewFullScreenAction: Action, CustomStringConvertible {
         extole.getLogger().debug("ViewFullScreenAction, event=\(event)")
         DispatchQueue.main.async {
             self.isActive = true
+            var eventData: [String:String] = [:]
+            event.eventData.forEach { item in
+                eventData[item.key] = item.value as? String
+            }
             extole.observableUi.bodyContent = AnyView(NavigationLink("",
-                destination: UIExtoleWebView(extole.webView(), self.zoneName ?? ""),
+                destination: UIExtoleWebView(extole.webView(data: eventData), self.zoneName ?? ""),
                 isActive: self.$isActive))
         }
     }
@@ -45,5 +49,5 @@ public class ViewFullScreenAction: Action, CustomStringConvertible {
         actionType <- map["type"]
     }
 
-    public var description: String { return "ViewFullScreenAction[zoneName:\(zoneName)]" }
+    public var description: String { return "ViewFullScreenAction[zoneName:\(String(describing: zoneName))]" }
 }

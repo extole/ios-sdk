@@ -57,5 +57,5 @@ class EventCondition: Condition, CustomStringConvertible {
         conditionType <- map["type"]
     }
 
-    public var description: String { return "EventCondition[eventNames:\(eventNames), hasDataKeys:\(hasDataKeys), hasDataValue:\(hasDataValues)]" }
+    public var description: String { return "EventCondition[eventNames:\(eventNames ?? []), hasDataKeys:\(hasDataKeys ?? []), hasDataValue:\(hasDataValues ?? [])]" }
 }
