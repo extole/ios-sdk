@@ -46,14 +46,24 @@ class CampaignService: Campaign {
         extole.getServices()
     }
 
-    func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+    func sendEvent(_ eventName: String, _ data: [String: Any?],
+                   _ completion: ((Id<Event>?, Error?) -> Void)?,
+                   _ jwt: String? = nil) {
         var requestData = data
         requestData["target"] = "campaign_id:" + campaignId.value
-        extole.sendEvent(eventName, requestData, completion)
+        extole.sendEvent(eventName, requestData, completion, jwt)
+    }
+
+    func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+        sendEvent(eventName, data, completion, nil)
     }
 
     func identify(_ email: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
         extole.identify(email, data, completion)
+    }
+
+    func identifyJwt(_ jwt: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+        extole.identifyJwt(jwt, data, completion)
     }
 
     func getLogger() -> ExtoleLogger {

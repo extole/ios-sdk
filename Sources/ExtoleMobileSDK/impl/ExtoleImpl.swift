@@ -83,7 +83,7 @@ public class ExtoleImpl: Extole {
     }
 
     public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
-        let zoneResponse: Zone? = self.zones.zonesResponse[zoneName] ?? nil
+        let zoneResponse: Zone? = self.zones.zonesResponse[ZoneKey(zoneName, data)] ?? nil
         if let zone = zoneResponse {
             let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
             completion(zone, campaign, nil)
@@ -98,7 +98,7 @@ public class ExtoleImpl: Extole {
                 let campaignId = response?.body?.campaignId ?? ""
                 let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
                 let campaign = CampaignService(Id(campaignId), zone, self)
-                self.zones.zonesResponse[zoneName] = zone
+                self.zones.zonesResponse[ZoneKey(zoneName, data)] = zone
                 completion(zone, campaign, error)
             }
         }
@@ -109,13 +109,14 @@ public class ExtoleImpl: Extole {
     }
 
     public func sendEvent(_ eventName: String, _ data: [String: Any?],
-                          _ completion: ((Id<Event>?, Error?) -> Void)?) {
+                          _ completion: ((Id<Event>?, Error?) -> Void)?,
+                          _ jwt: String? = nil) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
         let request = EventEndpoints.postWithRequestBuilder(
-          body: SubmitEventRequest(eventName: eventName, data: customData.mapValues { value in
+          body: SubmitEventRequest(eventName: eventName, jwt: jwt, data: customData.mapValues { value in
               value as! String
           }))
         let dispatchGroup = DispatchGroup()
@@ -139,6 +140,10 @@ public class ExtoleImpl: Extole {
           }
         dispatchGroup.wait(timeout: .now() + 5)
         SwiftEventBus.post("event", sender: AppEvent(eventName, data))
+    }
+
+    public func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+        return sendEvent(eventName, data, completion, nil)
     }
 
     private func subscribe() {
@@ -192,24 +197,27 @@ public class ExtoleImpl: Extole {
         let versionNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") ?? "1.0"
         let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") ?? "1.0"
         let versionAndBuildNumber = "Version #\(versionNumber) (Build #\(buildNumber))"
-        customHeaders[APP_HEADER] = appName
-        customHeaders[APP_VERSION_HEADER] = versionAndBuildNumber
-        customHeaders[APP_TYPE_HEADER] = "mobile-sdk-ios"
-        customHeaders["Accept"] = "application/json"
+        requestHeaders[APP_HEADER] = appName
+        requestHeaders[APP_VERSION_HEADER] = versionAndBuildNumber
+        requestHeaders[APP_TYPE_HEADER] = "mobile-sdk-ios"
+        requestHeaders["Accept"] = "application/json"
         if let bundleIdentifier = Bundle.main.bundleIdentifier {
-            customHeaders[APP_SHA_HEADER] = sha256(bundleIdentifier)
+            requestHeaders[APP_SHA_HEADER] = sha256(bundleIdentifier)
         }
-        return customHeaders
+        return requestHeaders
     }
 
-    public func identify(_ identifier: String, _ data: [String: Any?] = [:],
-                         _ completion: ((Id<Event>?, Error?) -> Void)?) {
+    public func identify(_ identifier: String, _ data: [String: Any?] = [:], _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var customData = data
         self.data.forEach { key, value in
             customData[key] = value
         }
         customData["email"] = identifier
         sendEvent("identify", customData, completion)
+    }
+
+    public func identifyJwt(_ jwt: String, _ data: [String: Any?] = [:], _ completion: ((Id<Event>?, Error?) -> Void)?) {
+        sendEvent("identify", data, completion, jwt)
     }
 
     public func logout() {
@@ -232,7 +240,7 @@ public class ExtoleImpl: Extole {
     public func getAccessToken() -> String? {
         return persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY)
     }
-    
+
     private func initAccessToken(completion: @escaping (_ accessToken: String) -> Void) {
         let dispatchGroup = DispatchGroup()
         let accessToken = persistance.string(forKey: ACCESS_TOKEN_PREFERENCES_KEY) ?? ""
