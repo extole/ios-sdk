@@ -1,0 +1,9 @@
+{
+  "products": [
+    {
+      "name": "ExtoleMobileSDK",
+      "targets": ["ExtoleMobileSDK"],
+      "product_type": "library"
+    }
+  ]
+}
