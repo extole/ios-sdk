@@ -19,7 +19,7 @@ public class FetchAction: Action, CustomStringConvertible {
         zoneFetcher?.getZones(zonesName: zones ?? [], data: allData,
             programLabels: extole.labels, customHeaders: extole.getHeaders()) { [self] response in
             response.forEach({ (key: ZoneResponseKey, value: Zone?) in
-                extole.zones.zonesResponse[key.zoneName] = value
+                extole.zones.zonesResponse[ZoneKey(key.zoneName, allData)] = value
             })
         }
     }

@@ -79,7 +79,7 @@ public class ExtoleImpl: Extole {
     }
 
     public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
-        let zoneResponse: Zone? = self.zones.zonesResponse[zoneName] ?? nil
+        let zoneResponse: Zone? = self.zones.zonesResponse[ZoneKey(zoneName, data)] ?? nil
         if let zone = zoneResponse {
             let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
             completion(zone, campaign, nil)
@@ -94,7 +94,7 @@ public class ExtoleImpl: Extole {
                 let campaignId = response?.body?.campaignId ?? ""
                 let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
                 let campaign = CampaignService(Id(campaignId), zone, self)
-                self.zones.zonesResponse[zoneName] = zone
+                self.zones.zonesResponse[ZoneKey(zoneName, data)] = zone
                 completion(zone, campaign, error)
             }
         }
