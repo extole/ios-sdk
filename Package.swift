@@ -14,9 +14,9 @@ let package = Package(
             targets: ["ExtoleMobileSDK"])
     ],
     dependencies: [
-        .package(name: "ExtoleConsumerAPI", url: "https://github.com/extole/ios-consumer-api.git", .upToNextMajor(from: "0.0.1")),
+        .package(name: "ExtoleConsumerAPI", url: "https://github.com/extole/ios-consumer-api.git", .upToNextMajor(from: "0.0.18")),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-        .package(url: "https://github.com/tristanhimmelman/ObjectMapper.git", "4.1.0"..<"4.2.0"),
+        .package(url: "https://github.com/tristanhimmelman/ObjectMapper.git", "4.1.0"..<"4.4.0"),
         .package(url: "https://github.com/cesarferreira/SwiftEventBus.git", from: "5.1.0")
     ],
     targets: [
