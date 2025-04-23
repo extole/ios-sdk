@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/daniftodi/SwiftEventBus.git",
         "state": {
           "branch": null,
-          "revision": "3b673b22cb5fa451096078e88d986bed3ec3cd06",
-          "version": "5.1.1"
+          "revision": "8b47a1de9bcb0697b4f20b730e51065011d37d62",
+          "version": "5.1.3"
         }
       }
     ]
