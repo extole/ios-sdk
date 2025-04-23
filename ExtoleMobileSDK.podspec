@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
   s.name = 'ExtoleMobileSDK'
   s.ios.deployment_target = '13.0'
   s.platform = :ios, "13.0"
-  s.version = '0.0.67'
+  s.version = '0.0.68'
   s.source = { :git => 'https://github.com/extole/ios-sdk.git', :tag => "#{s.version}" }
   s.authors = 'Extole'
   s.license = { :type => "MIT", :file => "LICENSE" }
@@ -19,12 +19,14 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     'IPHONEOS_DEPLOYMENT_TARGET' => '13.0',
     'OTHER_CFLAGS' => '-miphoneos-version-min=13.0',
-    'OTHER_LDFLAGS' => '-miphoneos-version-min=13.0'
+    'OTHER_LDFLAGS' => '-miphoneos-version-min=13.0',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
   }
   
   s.user_target_xcconfig = {
     'IPHONEOS_DEPLOYMENT_TARGET' => '13.0',
     'OTHER_CFLAGS' => '-miphoneos-version-min=13.0',
-    'OTHER_LDFLAGS' => '-miphoneos-version-min=13.0'
+    'OTHER_LDFLAGS' => '-miphoneos-version-min=13.0',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
   }
 end
