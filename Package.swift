@@ -17,7 +17,7 @@ let package = Package(
         .package(name: "ExtoleConsumerAPI", url: "https://github.com/extole/ios-consumer-api.git", .upToNextMajor(from: "0.0.1")),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/tristanhimmelman/ObjectMapper.git", "4.1.0"..<"4.2.0"),
-        .package(url: "https://github.com/daniftodi/SwiftEventBus.git", from: "5.1.3")
+        .package(url: "https://github.com/daniftodi/SwiftEventBus.git", from: "5.1.4")
     ],
     targets: [
         .target(
