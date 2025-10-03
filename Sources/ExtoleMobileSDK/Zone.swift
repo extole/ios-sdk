@@ -8,7 +8,7 @@ public class Zone {
     public let campaignId: Id<Campaign>
     private let extole: Extole
 
-    init(zoneName: String, campaignId: Id<Campaign>, content: [String: Entry?]?, extole: Extole) {
+    public init(zoneName: String, campaignId: Id<Campaign>, content: [String: Entry?]?, extole: Extole) {
         self.zoneName = zoneName
         self.campaignId = campaignId
         self.content = content
@@ -44,7 +44,10 @@ public class Zone {
         for index in 0...path.count - 2 {
             let currentPath = String(path[index])
             let jsonValue = initialReference?[currentPath]??.jsonValue
-            initialReference = jsonValue as! [String: Entry?]?
+            guard let value = jsonValue as? [String: Entry?]? else {
+                return nil
+            }
+            initialReference = value
         }
         if initialReference != nil {
             return initialReference?[String(path[path.count - 1])]??.jsonValue as Any?

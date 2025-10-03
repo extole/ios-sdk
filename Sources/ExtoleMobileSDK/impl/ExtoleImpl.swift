@@ -79,7 +79,8 @@ public class ExtoleImpl: Extole {
     }
 
     public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
-        let zoneResponse: Zone? = self.zones.zonesResponse[ZoneKey(zoneName, data)] ?? nil
+        let zoneKey = ZoneKey(zoneName, data.mapValues { $0 as Any? })
+        let zoneResponse: Zone? = self.zones.getZone(for: zoneKey)
         if let zone = zoneResponse {
             let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
             completion(zone, campaign, nil)
@@ -94,7 +95,7 @@ public class ExtoleImpl: Extole {
                 let campaignId = response?.body?.campaignId ?? ""
                 let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
                 let campaign = CampaignService(Id(campaignId), zone, self)
-                self.zones.zonesResponse[ZoneKey(zoneName, data)] = zone
+                self.zones.setZone(zone, for: zoneKey)
                 completion(zone, campaign, error)
             }
         }
@@ -113,7 +114,7 @@ public class ExtoleImpl: Extole {
         }
         let request = EventEndpoints.postWithRequestBuilder(
           body: SubmitEventRequest(eventName: eventName, jwt: jwt, data: customData.mapValues { value in
-              value as! String
+              String(describing: value ?? "nil")
           }))
         let dispatchGroup = DispatchGroup()
         dispatchGroup.enter()

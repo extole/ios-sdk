@@ -1,14 +1,39 @@
 import Foundation
 
 public class Zones {
-    public var zonesResponse: [ZoneKey: Zone?] = [:]
+    private var _zonesResponse: [ZoneKey: Zone?] = [:]
+    private let accessQueue = DispatchQueue(label: "com.extole.zones.access", attributes: .concurrent)
+    
+    public var zonesResponse: [ZoneKey: Zone?] {
+        get {
+            return accessQueue.sync { _zonesResponse }
+        }
+    }
+    
+    public func getZone(for key: ZoneKey) -> Zone? {
+        return accessQueue.sync { _zonesResponse[key] ?? nil }
+    }
+    
+    public func setZone(_ zone: Zone?, for key: ZoneKey) {
+        accessQueue.async(flags: .barrier) { [weak self] in
+            self?._zonesResponse[key] = zone
+        }
+    }
+    
+    public func getAllKeys() -> [ZoneKey] {
+        return accessQueue.sync { Array(_zonesResponse.keys) }
+    }
+    
+    public func getAllValues() -> [Zone?] {
+        return accessQueue.sync { Array(_zonesResponse.values) }
+    }
 }
 
-public class ZoneKey: Hashable, Equatable {
+public class ZoneKey: Hashable, Equatable, Comparable, CustomStringConvertible {
     var zoneName: String;
     var data: [String: Any?];
     
-    init(_ zoneName: String, _ data: [String: Any?]) {
+    public init(_ zoneName: String, _ data: [String: Any?]) {
         self.zoneName = zoneName
         self.data = data
     }
@@ -36,5 +61,14 @@ public class ZoneKey: Hashable, Equatable {
                 hasher.combine(value.hash)
             }
         }
+    }
+    
+    public static func < (lhs: ZoneKey, rhs: ZoneKey) -> Bool {
+        return "\(lhs.zoneName)" < "\(rhs.zoneName)"
+   }
+    
+    public var description: String {
+        let dataString = data.isEmpty ? "" : data.map { "\($0.key):\($0.value ?? "nil")" }.joined(separator: ",")
+        return "\(zoneName):[\(dataString)]"
     }
 }

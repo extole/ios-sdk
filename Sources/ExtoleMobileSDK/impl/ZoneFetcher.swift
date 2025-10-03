@@ -40,7 +40,7 @@ public class ZoneFetcher {
                   }
                   if response != nil && response?.body != nil {
                       let campaignId = response?.body?.campaignId ?? ""
-                      prefetchedResponses[ZoneResponseKey(zoneName)] = Zone(zoneName: zoneName,
+                      prefetchedResponses[ZoneResponseKey(zoneName, labels: labels)] = Zone(zoneName: zoneName,
                         campaignId: Id(campaignId), content: response?.body?.data, extole: extole)
                   }
                   dispatchGroup.leave()
