@@ -42,12 +42,13 @@ public class ExtoleImpl: Extole {
     private var logHandlers: [LogHandler] = []
     private var disabledActions: [ActionType] = []
     private var listenToEvents: Bool
+    private var debugEnabled: Bool
 
     public init(programDomain: String, applicationName: String, personIdentifier: String? = nil,
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
                 sandbox: String = "production-production", logHandlers: [LogHandler] = [],
                 listenToEvents: Bool = true, disabledActions: [ActionType] = [],
-                jwt: String? = nil) {
+                debugEnabled: Bool = false, jwt: String? = nil) {
         self.programDomain = programDomain
         self.appName = applicationName
         self.appData = applicationData
@@ -58,6 +59,7 @@ public class ExtoleImpl: Extole {
         self.logHandlers = logHandlers
         self.listenToEvents = listenToEvents
         self.disabledActions = disabledActions
+        self.debugEnabled = debugEnabled
 
         var loggerContext: [String: String] = [:]
         loggerContext["tags"] = ["mobile-sdk"].joined(separator: ",")
@@ -82,9 +84,17 @@ public class ExtoleImpl: Extole {
         let zoneKey = ZoneKey(zoneName, data.mapValues { $0 as Any? })
         let zoneResponse: Zone? = self.zones.getZone(for: zoneKey)
         if let zone = zoneResponse {
+            if debugEnabled {
+                logger.debug("Zone '\(zoneName)' found in cache")
+                NSLog("EXTOLE DEBUG: Zone '\(zoneName)' found in cache with data: \(data)")
+            }
             let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
             completion(zone, campaign, nil)
         } else {
+            if debugEnabled {
+                logger.debug("Zone '\(zoneName)' not found in cache, making HTTP call")
+                NSLog("EXTOLE DEBUG: Zone '\(zoneName)' not found in cache, making HTTP call with data: \(data)")
+            }
             doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
                 if error != nil {
                     logger.error("""
@@ -161,11 +171,12 @@ public class ExtoleImpl: Extole {
 
     public func copy(programDomain: String? = nil, applicationName: String? = nil, email: String? = nil,
                      applicationData: [String: String]? = nil, data: [String: String]? = nil,
-                     labels: [String]? = nil, sandbox: String? = nil, logHandlers: [LogHandler] = [],
+                     labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil, logHandlers: [LogHandler] = [],
                      listenToEvents: Bool = true, jwt: String? = nil) -> Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
           personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
-          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents, jwt: jwt)
+          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents, 
+          debugEnabled: debugEnabled ?? self.debugEnabled, jwt: jwt)
         app?.extole = extole
         return extole
     }
