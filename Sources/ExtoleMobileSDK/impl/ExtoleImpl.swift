@@ -70,7 +70,8 @@ public class ExtoleImpl: Extole {
           }
           .joined(separator: ",")
         self.logger = ExtoleLoggerImpl(programDomain, "", loggerContext, logHandlers)
-        initAccessToken(email: personIdentifier, jwt: jwt) { [unowned self] (accessToken: String) in
+        initAccessToken(email: personIdentifier, jwt: jwt) { [weak self] (accessToken: String) in
+            guard let self = self else { return }
             extoleServices = ExtoleServices(self)
             logger = ExtoleLoggerImpl(programDomain, accessToken, loggerContext, logHandlers)
 
@@ -95,7 +96,8 @@ public class ExtoleImpl: Extole {
                 logger.debug("Zone '\(zoneName)' not found in cache, making HTTP call")
                 NSLog("EXTOLE DEBUG: Zone '\(zoneName)' not found in cache, making HTTP call with data: \(data)")
             }
-            doZoneRequest(zoneName: zoneName, data: data) { [unowned self] response, error in
+            doZoneRequest(zoneName: zoneName, data: data) { [weak self] response, error in
+                guard let self = self else { return }
                 if error != nil {
                     logger.error("""
                                  Failed to render zone=\(zoneName),
@@ -129,7 +131,11 @@ public class ExtoleImpl: Extole {
         let dispatchGroup = DispatchGroup()
         dispatchGroup.enter()
         httpCallFor(request, self.programDomain, self.getHeaders())
-          .execute { [self] (response, error) in
+          .execute { [weak self] (response, error) in
+              guard let self = self else {
+                  dispatchGroup.leave()
+                  return
+              }
               if error != nil {
                   logger.error("""
                                Failed to send event=\(eventName),
@@ -143,10 +149,10 @@ public class ExtoleImpl: Extole {
                   SwiftEventBus.post("access_token_changed", sender: AppEvent(eventName, data))
               }
               completion?(response?.body?._id != nil ? Id(response?.body?._id ?? "") : nil, error)
+              SwiftEventBus.post("event", sender: AppEvent(eventName, data))
               dispatchGroup.leave()
           }
-        dispatchGroup.wait(timeout: .now() + 5)
-        SwiftEventBus.post("event", sender: AppEvent(eventName, data))
+        _ = dispatchGroup.wait(timeout: .now() + 5)
     }
 
     public func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
@@ -270,10 +276,16 @@ public class ExtoleImpl: Extole {
             httpCallFor(request, self.programDomain + "/api", self.getHeaders())
               .execute { [self] (_: Response<TokenResponse>?, error: Error?) in
                   if error != nil {
-                      switch error as! ErrorResponse? {
-                      case .error(403, _, _):
-                          createAccessToken(email: email, jwt: jwt, completion: completion, dispatchGroup)
-                      default:
+                      if let errorResponse = error as? ErrorResponse {
+                          switch errorResponse {
+                          case .error(403, _, _):
+                              createAccessToken(email: email, jwt: jwt, completion: completion, dispatchGroup)
+                          default:
+                              completion("")
+                              dispatchGroup.leave()
+                          }
+                      } else {
+                          completion("")
                           dispatchGroup.leave()
                       }
                   } else {
@@ -299,7 +311,10 @@ public class ExtoleImpl: Extole {
     private func createAccessToken(email: String?, jwt: String?, completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {
         let request = AuthorizationEndpoints.createTokenWithRequestBuilder(body: CreateTokenRequest(jwt: jwt, email: email))
         httpCallFor(request, self.programDomain + "/api", self.customHeaders)
-          .execute { [self] (tokenResponse: Response<TokenResponse>?, _: Error?) in
+          .execute { [self] (tokenResponse: Response<TokenResponse>?, error: Error?) in
+              if let error = error {
+                  logger.error("Failed to create access token: \(error.localizedDescription)")
+              }
               let accessToken = tokenResponse?.body?.accessToken ?? ""
               setAccessToken(accessToken: accessToken, dispatchGroup)
               completion(accessToken)

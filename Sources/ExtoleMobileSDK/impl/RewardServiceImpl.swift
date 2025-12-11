@@ -26,7 +26,7 @@ class RewardServiceImpl: RewardService {
                       return completion(pollingRewardResponse?.body, error)
                   }
               }
-            sleep(UInt32(timeoutSeconds * 1_000_000))
+            sleep(UInt32(timeoutSeconds))
             dispatchGroup.wait(timeout: .now() + 5)
         }
         if !rewardResponseWasReceived {
