@@ -85,7 +85,19 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
         let accessToken = headers["Authorization"]?.replacingOccurrences(of: "Bearer ", with: "")
         if accessToken != nil {
             NSLog("WebView setting accessTokenTo: \(accessToken ?? "")")
-            webView.evaluateJavaScript("extole.tokenStore.set('\(accessToken ?? "")')")
+            let js = """
+            (function() {
+                function waitForExtole() {
+                    if (window.extole && extole.tokenStore && typeof extole.tokenStore.set === 'function') {
+                        extole.tokenStore.set('\(accessToken ?? "")');
+                    } else {
+                        setTimeout(waitForExtole, 50);
+                    }
+                }
+                waitForExtole();
+            })();
+            """
+            webView.evaluateJavaScript(js)
         }
     }
 }
