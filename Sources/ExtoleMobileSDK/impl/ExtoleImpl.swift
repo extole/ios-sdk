@@ -152,7 +152,6 @@ public class ExtoleImpl: Extole {
               SwiftEventBus.post("event", sender: AppEvent(eventName, data))
               dispatchGroup.leave()
           }
-        _ = dispatchGroup.wait(timeout: .now() + 5)
     }
 
     public func sendEvent(_ eventName: String, _ data: [String: Any?], _ completion: ((Id<Event>?, Error?) -> Void)?) {
