@@ -7,6 +7,7 @@ import SwiftUI
 import CryptoKit
 import ObjectMapper
 
+// swiftlint:disable:next type_body_length
 public class ExtoleImpl: Extole {
     public var PARTNER_SHARE_ID_PREFRENCES_KEY: String = "partner_share_id"
     public var ACCESS_TOKEN_PREFERENCES_KEY: String = "access_token"
@@ -180,7 +181,7 @@ public class ExtoleImpl: Extole {
                      listenToEvents: Bool = true, jwt: String? = nil) -> Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
           personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
-          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents, 
+          labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents,
           debugEnabled: debugEnabled ?? self.debugEnabled, jwt: jwt)
         app?.extole = extole
         return extole

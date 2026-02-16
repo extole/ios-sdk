@@ -7,11 +7,13 @@ public class ViewFullScreenAction: Action, CustomStringConvertible {
 
     var zoneName: String?
     var actionType: String = type.rawValue
+    @State var isActive = true
 
     public override func execute(event: AppEvent, extole: ExtoleImpl) {
         extole.getLogger().debug("ViewFullScreenAction, event=\(event)")
         DispatchQueue.main.async {
-            var eventData: [String:String] = [:]
+            self.isActive = true
+            var eventData: [String: String] = [:]
             event.eventData.forEach { item in
                 eventData[item.key] = item.value as? String
             }
@@ -56,7 +58,7 @@ private struct NavigationLinkWrapper: View {
     let destination: UIExtoleWebView
     let id: String
     @State private var isActive = false
-    
+
     var body: some View {
         NavigationLink("", destination: destination, isActive: $isActive)
             .onAppear {

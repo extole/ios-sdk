@@ -20,7 +20,7 @@ public struct UIExtoleWebView: View {
         self.zoneName = zoneName
         self.uniqueId = UUID().uuidString
     }
-    
+
     public var body: some View {
         ZStack {
             WebViewRepresentable(
@@ -29,7 +29,7 @@ public struct UIExtoleWebView: View {
                 uniqueId: uniqueId,
                 isLoading: $isLoading
             )
-            
+
             if isLoading {
                 if #available(iOS 14.0, *) {
                     ProgressView()
@@ -47,10 +47,10 @@ private struct WebViewRepresentable: UIViewRepresentable {
     let zoneName: String
     let uniqueId: String
     @Binding var isLoading: Bool
-    
+
     func makeUIView(context: Context) -> WKWebView {
         let webView = extoleWebView.getWebView()
-        
+
         if let webViewService = extoleWebView as? ExtoleWebViewService {
             webViewService.setLoadingStateChanged { loading in
                 DispatchQueue.main.async {
@@ -58,13 +58,13 @@ private struct WebViewRepresentable: UIViewRepresentable {
                 }
             }
         }
-        
+
         DispatchQueue.main.async {
             extoleWebView.load(zoneName)
         }
         return webView
     }
-    
+
     func updateUIView(_ webView: WKWebView, context: Context) {
     }
 }
@@ -101,11 +101,11 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
     func getWebView() -> WKWebView {
         webView
     }
-    
+
     func setLoadingStateChanged(_ callback: @escaping (Bool) -> Void) {
         loadingStateChanged = callback
     }
-    
+
     func load(_ zone: String) {
         var urlComps = URLComponents(string: "\(programDomain)/zone/\(zone)")!
         urlComps.queryItems = queryParameters.map { (key, value) in
@@ -132,14 +132,14 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
             decisionHandler(.allow)
         }
     }
-    
+
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         loadingStateChanged?(true)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         loadingStateChanged?(false)
-        
+
         let accessToken = headers["Authorization"]?.replacingOccurrences(of: "Bearer ", with: "")
         if accessToken != nil {
             NSLog("WebView setting accessTokenTo: \(accessToken ?? "")")
@@ -158,11 +158,11 @@ class ExtoleWebViewService: NSObject, ExtoleWebView, WKNavigationDelegate {
             webView.evaluateJavaScript(js)
         }
     }
-    
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         loadingStateChanged?(false)
     }
-    
+
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingStateChanged?(false)
     }
