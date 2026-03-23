@@ -66,7 +66,7 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
         data?.forEach({ (key: String, value: String) in
             allData[key] = value
         })
-        extole.data.forEach { (key: String, value: String) in
+        extole.dataSnapshot().forEach { (key: String, value: String) in
             allData[key] = value
         }
         return allData

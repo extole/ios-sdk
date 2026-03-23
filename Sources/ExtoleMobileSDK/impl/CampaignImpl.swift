@@ -16,7 +16,6 @@ class CampaignService: Campaign {
         self.campaignId = campaignId
         self.zone = zone
         self.extole = extole
-        self.extole.data["campaign_id"] = campaignId.value
     }
 
     func getProgram() -> String {

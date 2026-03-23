@@ -18,7 +18,7 @@ class RewardServiceImpl: RewardService {
         let dispatchGroup = DispatchGroup()
         for _ in 0...retries {
             dispatchGroup.enter()
-            httpCallFor(request, extole.programDomain + "/api", extole.customHeaders)
+            httpCallFor(request, extole.programDomain + "/api", extole.customHeadersSnapshot())
               .execute { (pollingRewardResponse: Response<PollingRewardResponse>?, error: Error?) in
                   dispatchGroup.leave()
                   if pollingRewardResponse?.body?.status != PollingRewardResponse.Status.pending || error != nil {

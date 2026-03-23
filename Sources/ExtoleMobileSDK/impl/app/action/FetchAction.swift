@@ -38,7 +38,7 @@ public class FetchAction: Action, CustomStringConvertible {
         var allData: [String: String] = [:]
         allData["device_id"] = deviceId
         allData["os"] = systemVersion
-        extole.data.forEach { (key: String, value: String) in
+        extole.dataSnapshot().forEach { (key: String, value: String) in
             allData[key] = value
         }
         data?.forEach({ (key: String, value: String) in

@@ -27,10 +27,11 @@ public class ExtoleImpl: Extole {
     var programDomain: String
     var appName: String
     var appData: [String: String]
-    var data: [String: String]
+    private var data: [String: String]
     var labels: [String]
-    var customHeaders: [String: String] = [:]
+    private var customHeaders: [String: String] = [:]
     var observableUi = ExtoleObservableUi()
+    private let stateQueue = DispatchQueue(label: "com.extole.state", attributes: .concurrent)
 
     private var sandbox: String
     private var personIdentifier: String?
@@ -44,6 +45,8 @@ public class ExtoleImpl: Extole {
     private var disabledActions: [ActionType] = []
     private var listenToEvents: Bool
     private var debugEnabled: Bool
+    var sendEventObserver: ((String, [String: Any?]) -> Void)?
+    var skipSendEventNetworkForTests = false
 
     public init(programDomain: String, applicationName: String, personIdentifier: String? = nil,
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
@@ -122,8 +125,13 @@ public class ExtoleImpl: Extole {
                           _ completion: ((Id<Event>?, Error?) -> Void)?,
                           _ jwt: String? = nil) {
         var customData = data
-        self.data.forEach { key, value in
+        dataSnapshot().forEach { key, value in
             customData[key] = value
+        }
+        sendEventObserver?(eventName, customData)
+        if skipSendEventNetworkForTests {
+            completion?(Id("test-event-id"), nil)
+            return
         }
         let request = EventEndpoints.postWithRequestBuilder(
           body: SubmitEventRequest(eventName: eventName, jwt: jwt, data: customData.mapValues { value in
@@ -180,7 +188,7 @@ public class ExtoleImpl: Extole {
                      labels: [String]? = nil, sandbox: String? = nil, debugEnabled: Bool? = nil, logHandlers: [LogHandler] = [],
                      listenToEvents: Bool = true, jwt: String? = nil) -> Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
-          personIdentifier: email ?? self.personIdentifier, data: data ?? self.data,
+          personIdentifier: email ?? self.personIdentifier, data: data ?? dataSnapshot(),
           labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents,
           debugEnabled: debugEnabled ?? self.debugEnabled, jwt: jwt)
         app?.extole = extole
@@ -189,11 +197,11 @@ public class ExtoleImpl: Extole {
 
     public func webView(headers: [String: String] = [:], data: [String: String] = [:]) -> ExtoleWebView {
         var headersParams = headers
-        customHeaders.forEach { key, value in
+        customHeadersSnapshot().forEach { key, value in
             headersParams[key] = value
         }
         var dataParams = data
-        self.data.forEach { key, value in
+        dataSnapshot().forEach { key, value in
             dataParams[key] = value
         }
         return ExtoleWebViewService(programDomain, dataParams, headersParams)
@@ -205,7 +213,7 @@ public class ExtoleImpl: Extole {
 
     public func getHeaders() -> [String: String] {
         var requestHeaders: [String: String] = [:]
-        customHeaders.forEach { key, value in
+        customHeadersSnapshot().forEach { key, value in
             requestHeaders[key] = value
         }
         let versionNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") ?? "1.0"
@@ -227,7 +235,7 @@ public class ExtoleImpl: Extole {
 
     private func identify(_ email: String?, _ data: [String: Any?], _ jwt: String?, _ completion: ((Id<Event>?, Error?) -> Void)?) {
         var customData = data
-        self.data.forEach { key, value in
+        dataSnapshot().forEach { key, value in
             customData[key] = value
         }
         if let identifier = email {
@@ -271,7 +279,7 @@ public class ExtoleImpl: Extole {
         if accessToken.isEmpty {
             createAccessToken(email: email, jwt: jwt, completion: completion, dispatchGroup)
         } else {
-            customHeaders["Authorization"] = "Bearer " + accessToken
+            setCustomHeader("Authorization", value: "Bearer " + accessToken)
             let request = AuthorizationEndpoints.getTokenDetailsWithRequestBuilder()
             httpCallFor(request, self.programDomain + "/api", self.getHeaders())
               .execute { [self] (_: Response<TokenResponse>?, error: Error?) in
@@ -310,7 +318,7 @@ public class ExtoleImpl: Extole {
 
     private func createAccessToken(email: String?, jwt: String?, completion: @escaping (_ accessToken: String) -> Void, _ dispatchGroup: DispatchGroup) {
         let request = AuthorizationEndpoints.createTokenWithRequestBuilder(body: CreateTokenRequest(jwt: jwt, email: email))
-        httpCallFor(request, self.programDomain + "/api", self.customHeaders)
+        httpCallFor(request, self.programDomain + "/api", self.customHeadersSnapshot())
           .execute { [self] (tokenResponse: Response<TokenResponse>?, error: Error?) in
               if let error = error {
                   logger.error("Failed to create access token: \(error.localizedDescription)")
@@ -323,14 +331,14 @@ public class ExtoleImpl: Extole {
 
     private func setAccessToken(accessToken: String, _ dispatchGroup: DispatchGroup? = nil) {
         logger.debug("Setting accessToken")
-        customHeaders["Authorization"] = "Bearer " + accessToken
+        setCustomHeader("Authorization", value: "Bearer " + accessToken)
         persistance.setValue(accessToken, forKey: ACCESS_TOKEN_PREFERENCES_KEY)
         dispatchGroup?.leave()
     }
 
     private func clearAccessToken() {
         persistance.setValue("", forKey: ACCESS_TOKEN_PREFERENCES_KEY)
-        customHeaders["Authorization"] = ""
+        setCustomHeader("Authorization", value: "")
     }
 
     private func clearZonesCache() {
@@ -342,7 +350,7 @@ public class ExtoleImpl: Extole {
         data.forEach { (key: String, value: String) in
             modifiedData[key] = value
         }
-        self.data.forEach { (key: String, value: String) in
+        dataSnapshot().forEach { (key: String, value: String) in
             modifiedData[key] = value
         }
         if !labels.isEmpty {
@@ -355,6 +363,20 @@ public class ExtoleImpl: Extole {
           .execute { (response: Response<ZoneResponse>?, error: Error?) in
               completion(response, error)
           }
+    }
+
+    func dataSnapshot() -> [String: String] {
+        stateQueue.sync { data }
+    }
+
+    func customHeadersSnapshot() -> [String: String] {
+        stateQueue.sync { customHeaders }
+    }
+
+    func setCustomHeader(_ key: String, value: String) {
+        stateQueue.sync(flags: .barrier) {
+            customHeaders[key] = value
+        }
     }
 
 }
