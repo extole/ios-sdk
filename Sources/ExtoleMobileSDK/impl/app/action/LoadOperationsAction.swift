@@ -24,7 +24,10 @@ public class LoadOperationsAction: Action, Hashable, Equatable, CustomStringConv
 
         zoneFetcher?.getZones(zonesName: zones ?? [], data: allData,
             programLabels: extole.labels, customHeaders: extole.getHeaders()) { [self] response in
-            response.forEach({ (_: ZoneResponseKey, value: Zone?) in
+            response.forEach({ (key: ZoneResponseKey, value: Zone?) in
+                if key.zoneName == "mobile_bootstrap", let enabled = value?.get("configuration.zone_cache_enabled") as? Bool {
+                    extole.setZonesCacheEnabled(enabled)
+                }
                 let operationsJson = value?.get("operations") as? [Entry?]
                 if value?.get("operations") != nil {
                     let json = try! JSONEncoder().encode(operationsJson)

@@ -19,10 +19,12 @@ public class FetchAction: Action, CustomStringConvertible {
         zoneFetcher?.getZones(zonesName: zones ?? [], data: allData,
             programLabels: extole.labels, customHeaders: extole.getHeaders()) { [self] response in
             response.forEach({ (key: ZoneResponseKey, value: Zone?) in
-                var cacheData = allData.mapValues { $0 as Any? }
-                cacheData["labels"] = key.labels
-                let zoneKey = ZoneKey(key.zoneName, cacheData)
-                extole.zones.setZone(value, for: zoneKey)
+                if extole.isZonesCacheEnabled() {
+                    var cacheData = allData.mapValues { $0 as Any? }
+                    cacheData["labels"] = key.labels
+                    let zoneKey = ZoneKey(key.zoneName, cacheData)
+                    extole.zones.setZone(value, for: zoneKey)
+                }
             })
         }
     }

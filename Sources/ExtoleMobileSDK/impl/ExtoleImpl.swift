@@ -45,6 +45,7 @@ public class ExtoleImpl: Extole {
     private var disabledActions: [ActionType] = []
     private var listenToEvents: Bool
     private var debugEnabled: Bool
+    private var zonesCacheEnabled: Bool
     var sendEventObserver: ((String, [String: Any?]) -> Void)?
     var skipSendEventNetworkForTests = false
 
@@ -52,7 +53,7 @@ public class ExtoleImpl: Extole {
                 applicationData: [String: String] = [:], data: [String: String] = [:], labels: [String] = [],
                 sandbox: String = "production-production", logHandlers: [LogHandler] = [],
                 listenToEvents: Bool = true, disabledActions: [ActionType] = [],
-                debugEnabled: Bool = false, jwt: String? = nil) {
+                debugEnabled: Bool = false, zonesCacheEnabled: Bool = true, jwt: String? = nil) {
         self.programDomain = programDomain
         self.appName = applicationName
         self.appData = applicationData
@@ -64,6 +65,7 @@ public class ExtoleImpl: Extole {
         self.listenToEvents = listenToEvents
         self.disabledActions = disabledActions
         self.debugEnabled = debugEnabled
+        self.zonesCacheEnabled = zonesCacheEnabled
 
         var loggerContext: [String: String] = [:]
         loggerContext["tags"] = ["mobile-sdk"].joined(separator: ",")
@@ -87,34 +89,51 @@ public class ExtoleImpl: Extole {
 
     public func fetchZone(_ zoneName: String, _ data: [String: String], completion: @escaping (Zone?, Campaign?, Error?) -> Void) {
         let zoneKey = ZoneKey(zoneName, data.mapValues { $0 as Any? })
-        let zoneResponse: Zone? = self.zones.getZone(for: zoneKey)
-        if let zone = zoneResponse {
-            if debugEnabled {
-                logger.debug("Zone '\(zoneName)' found in cache")
-                NSLog("EXTOLE DEBUG: Zone '\(zoneName)' found in cache with data: \(data)")
-            }
-            let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
-            completion(zone, campaign, nil)
-        } else {
-            if debugEnabled {
-                logger.debug("Zone '\(zoneName)' not found in cache, making HTTP call")
-                NSLog("EXTOLE DEBUG: Zone '\(zoneName)' not found in cache, making HTTP call with data: \(data)")
-            }
-            doZoneRequest(zoneName: zoneName, data: data) { [weak self] response, error in
-                guard let self = self else { return }
-                if error != nil {
-                    logger.error("""
-                                 Failed to render zone=\(zoneName),
-                                 data=\(data), errorCode=\(String(describing: error?.localizedDescription))
-                                 """)
+        let cacheEnabled = isZonesCacheEnabled()
+        if cacheEnabled {
+            let zoneResponse: Zone? = self.zones.getZone(for: zoneKey)
+            if let zone = zoneResponse {
+                if debugEnabled {
+                    logger.debug("Zone '\(zoneName)' found in cache")
+                    NSLog("EXTOLE DEBUG: Zone '\(zoneName)' found in cache with data: \(data)")
                 }
-                let campaignId = response?.body?.campaignId ?? ""
-                let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
-                let campaign = CampaignService(Id(campaignId), zone, self)
-                self.zones.setZone(zone, for: zoneKey)
-                completion(zone, campaign, error)
+                let campaign = CampaignService(Id(zone.campaignId.value), zone, self)
+                completion(zone, campaign, nil)
+                return
             }
         }
+        if debugEnabled && cacheEnabled {
+            logger.debug("Zone '\(zoneName)' not found in cache, making HTTP call")
+            NSLog("EXTOLE DEBUG: Zone '\(zoneName)' not found in cache, making HTTP call with data: \(data)")
+        } else if debugEnabled {
+            logger.debug("Zone '\(zoneName)' cache disabled, making HTTP call")
+        }
+        doZoneRequest(zoneName: zoneName, data: data) { [weak self] response, error in
+            guard let self = self else { return }
+            if error != nil {
+                logger.error("""
+                             Failed to render zone=\(zoneName),
+                             data=\(data), errorCode=\(String(describing: error?.localizedDescription))
+                             """)
+            }
+            let campaignId = response?.body?.campaignId ?? ""
+            let zone = Zone(zoneName: zoneName, campaignId: Id(campaignId), content: response?.body?.data, extole: self)
+            let campaign = CampaignService(Id(campaignId), zone, self)
+            if self.isZonesCacheEnabled() {
+                self.zones.setZone(zone, for: zoneKey)
+            }
+            completion(zone, campaign, error)
+        }
+    }
+
+    func setZonesCacheEnabled(_ enabled: Bool) {
+        stateQueue.sync(flags: .barrier) {
+            zonesCacheEnabled = enabled
+        }
+    }
+
+    func isZonesCacheEnabled() -> Bool {
+        stateQueue.sync { zonesCacheEnabled }
     }
 
     public func getServices() -> ExtoleServices {
@@ -190,7 +209,7 @@ public class ExtoleImpl: Extole {
         let extole = ExtoleImpl(programDomain: programDomain ?? self.programDomain, applicationName: applicationName ?? self.appName,
           personIdentifier: email ?? self.personIdentifier, data: data ?? dataSnapshot(),
           labels: labels ?? self.labels, sandbox: sandbox ?? self.sandbox, logHandlers: logHandlers, listenToEvents: listenToEvents,
-          debugEnabled: debugEnabled ?? self.debugEnabled, jwt: jwt)
+          debugEnabled: debugEnabled ?? self.debugEnabled, zonesCacheEnabled: self.isZonesCacheEnabled(), jwt: jwt)
         app?.extole = extole
         return extole
     }
