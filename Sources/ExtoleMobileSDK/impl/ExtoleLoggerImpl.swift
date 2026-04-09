@@ -45,7 +45,11 @@ class ExtoleLoggerImpl: ExtoleLogger {
     }
 
     func error(_ exception: Error, _ message: String, args: Any?...) {
-        logger.error("\(exception) \(message)")
+        let logMessage = "\(exception) \(message)"
+        let shouldSuppressRemoteUpload = NetworkConnectivityErrorFilter.shouldSuppressRemoteUpload(for: exception)
+        RemoteLogUploadContext.withSuppressedRemoteUpload(when: shouldSuppressRemoteUpload) {
+            logger.error("\(logMessage)")
+        }
     }
 
     private func mapToLibraryLogLevel(level: LogLevel) -> Logger.Level {

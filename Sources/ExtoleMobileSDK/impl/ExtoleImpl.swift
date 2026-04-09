@@ -164,10 +164,10 @@ public class ExtoleImpl: Extole {
                   dispatchGroup.leave()
                   return
               }
-              if error != nil {
-                  logger.error("""
+              if let error = error {
+                  logger.error(error, """
                                Failed to send event=\(eventName),
-                               data=\(data), error=\(String(describing: error?.localizedDescription))
+                               dataKeys=\(Array(data.keys))
                                """)
               }
               let accessTokenHeaderValue = response?.header[ACCESS_TOKEN_HEADER_NAME]
@@ -340,7 +340,7 @@ public class ExtoleImpl: Extole {
         httpCallFor(request, self.programDomain + "/api", self.customHeadersSnapshot())
           .execute { [self] (tokenResponse: Response<TokenResponse>?, error: Error?) in
               if let error = error {
-                  logger.error("Failed to create access token: \(error.localizedDescription)")
+                  logger.error(error, "Failed to create access token")
               }
               let accessToken = tokenResponse?.body?.accessToken ?? ""
               setAccessToken(accessToken: accessToken, dispatchGroup)

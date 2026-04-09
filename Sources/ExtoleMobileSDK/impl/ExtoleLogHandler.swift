@@ -44,6 +44,9 @@ struct ExtoleLogHandler: LogHandler {
                     file: String,
                     function: String,
                     line: UInt) {
+        if RemoteLogUploadContext.shouldSuppressRemoteUpload {
+            return
+        }
         let prettyMetadata = metadata?.isEmpty ?? true
           ? prettyMetadata
           : prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))

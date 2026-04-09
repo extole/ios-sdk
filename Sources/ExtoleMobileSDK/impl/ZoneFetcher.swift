@@ -32,10 +32,9 @@ public class ZoneFetcher {
               body: RenderZoneRequest(eventName: zoneName, jwt: nil, idToken: nil, data: requestData))
             httpCallFor(requestBuilder, programDomain + "/api", customHeaders)
               .execute { [self] (response: Response<ZoneResponse>?, error: Error?) in
-                  if error != nil {
-                      logger?.error("""
-                                    Zone fetch error \(error.debugDescription),
-                                    labels=\(labels), zoneName=\(zoneName)
+                  if let error = error {
+                      logger?.error(error, """
+                                    Zone fetch error labels=\(labels), zoneName=\(zoneName)
                                     """)
                   }
                   if response != nil && response?.body != nil {

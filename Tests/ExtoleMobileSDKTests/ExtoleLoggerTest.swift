@@ -1,5 +1,6 @@
 import XCTest
 import Logging
+import ExtoleConsumerAPI
 
 @testable import ExtoleMobileSDK
 
@@ -82,5 +83,23 @@ final class ExtoleLoggerTest: XCTestCase {
 
         XCTAssert(inMemoryLogs[Logger.Level.error]?.count == 1)
         XCTAssertEqual(inMemoryLogs[Logger.Level.error]![0], "extole : Error\n")
+    }
+
+    func testConnectivityErrorsAreNotSentToExtole() throws {
+        logger?.error(URLError(.notConnectedToInternet), "Offline")
+
+        XCTAssertNil(inMemoryLogs[Logger.Level.error])
+    }
+
+    func testWrappedConnectivityErrorsAreNotSentToExtole() throws {
+        logger?.error(ErrorResponse.error(500, nil, URLError(.timedOut)), "Timeout")
+
+        XCTAssertNil(inMemoryLogs[Logger.Level.error])
+    }
+
+    func testDnsErrorsContinueToBeSentToExtole() throws {
+        logger?.error(ErrorResponse.error(500, nil, URLError(.cannotFindHost)), "DNS failure")
+
+        XCTAssertEqual(inMemoryLogs[Logger.Level.error]?.count, 1)
     }
 }
